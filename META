@@ -1,0 +1,5 @@
+version = "0.1"
+description = "Interactive text-oriented user-interfaces for OCaml"
+
+archive(byte) = "inuit.cma"
+archive(native) = "inuit.cmxa"
