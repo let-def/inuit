@@ -1,0 +1,17 @@
+opam-version: "1.2"
+name: "inuit"
+version: "0.1"
+maintainer: "Frederic Bour <frederic.bour@lakaban.net>"
+authors: "Frederic Bour <frederic.bour@lakaban.net>"
+homepage: "https://github.com/def-lkb/inuit"
+bug-reports: "https://github.com/def-lkb/inuit"
+license: "MIT"
+dev-repo: "https://github.com/def-lkb/inuit.git"
+build: [
+  [make]
+]
+install: [make "install"]
+remove: ["ocamlfind" "remove" "inuit"]
+depends: [
+  "ocamlfind" {build}
+]
