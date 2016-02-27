@@ -1,17 +1,22 @@
-class type cursor =
+type flags = [ `Editable | `Clickable | `Raw ]
+
+class type ['flags] cursor =
   object ('self)
-    method text : string -> int -> int -> unit
+    method text : ?flags:'flags list -> string -> unit
     method clear : unit
-    method is_closed : bool
 
     method sub : 'self
     method sub_action : ('self -> unit) option -> 'self
+
+    method is_closed : bool
+
+    constraint 'flags = [> flags]
   end
 
 type 'a action = 'a -> unit
-  constraint 'a = #cursor
+  constraint 'a = _ #cursor
 
-let text c txt = c#text txt 0 (String.length txt)
+let text ?flags c txt = c#text ?flags txt
 let clear c = c#clear
 
 let sub ?action c =
@@ -25,9 +30,9 @@ let link c str action =
 let printf c fmt =
   Printf.ksprintf (text c) fmt
 
-let null_cursor : cursor =
+let null_cursor : flags cursor =
   object (self)
-    method text _str _off _len = ()
+    method text ?flags:_ _str = ()
     method clear = ()
     method is_closed = true
 
@@ -46,10 +51,10 @@ module Nav = struct
 
     title: 'cursor;
     body: 'cursor;
-  } constraint 'cursor = #cursor
+  } constraint 'cursor = _ #cursor
 
   and 'cursor page = string * ('cursor t -> unit)
-  constraint 'cursor = #cursor
+  constraint 'cursor = _ #cursor
 
   let null_page : _ page = "", ignore
 
@@ -139,7 +144,7 @@ module Tree = struct
   type 'cursor t = {
     indent: int;
     cursor: 'cursor;
-  } constraint 'cursor = #cursor
+  } constraint 'cursor = _ #cursor
 
   let null = {
     indent = 0;
