@@ -26,7 +26,7 @@ val link   : 'cursor -> string -> 'cursor action -> unit
 
 val printf : _ #cursor -> ('a, unit, string, unit) format4 -> 'a
 
-val null_cursor : flags cursor
+val null_cursor : _ cursor
 val is_closed   : _ #cursor -> bool
 
 (* Basic widgets *)
@@ -40,8 +40,6 @@ module Nav : sig
 
   val title : 'cursor t -> 'cursor
   val body  : 'cursor t -> 'cursor
-
-  val null : flags cursor t
 end
 
 module Tree : sig
@@ -51,6 +49,4 @@ module Tree : sig
   val add   : ?children:('cursor t -> unit) -> ?action:'cursor action option ->
               ?opened:bool ref -> 'cursor t -> 'cursor
   val clear : 'cursor t -> unit
-
-  val null  : flags cursor t
 end

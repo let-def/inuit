@@ -30,7 +30,7 @@ let link c str action =
 let printf c fmt =
   Printf.ksprintf (text c) fmt
 
-let null_cursor : flags cursor =
+let null_cursor =
   object (self)
     method text ?flags:_ _str = ()
     method clear = ()
@@ -68,15 +68,6 @@ module Nav = struct
       false
     ) else
       true
-
-  let null = {
-    prev  = [];
-    page  = null_page;
-    next  = [];
-
-    title = null_cursor;
-    body  = null_cursor;
-  }
 
   let refresh t =
     if not_closed t then (
@@ -145,11 +136,6 @@ module Tree = struct
     indent: int;
     cursor: 'cursor;
   } constraint 'cursor = _ #cursor
-
-  let null = {
-    indent = 0;
-    cursor = null_cursor;
-  }
 
   let not_closed t =
     not (is_closed t.cursor)
