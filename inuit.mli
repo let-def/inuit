@@ -35,11 +35,18 @@ module Nav : sig
   type 'cursor t
     constraint 'cursor = _ #cursor
 
-  val make  : 'cursor -> string -> ('cursor t -> unit) -> unit
-  val modal : 'cursor t -> string -> ('cursor t -> unit) -> unit
+  type 'cursor frame = {
+    title: 'cursor;
+    body: 'cursor;
+    nav: 'cursor t;
+  } constraint 'cursor = _ #cursor
 
-  val title : 'cursor t -> 'cursor
-  val body  : 'cursor t -> 'cursor
+  val make : string -> ('cursor frame -> unit) -> 'cursor t
+
+  val push : 'cursor t -> string -> ('cursor frame -> unit) -> unit
+  val goto : 'cursor t -> string -> ('cursor frame -> unit) -> unit
+
+  val render : 'cursor t -> 'cursor -> unit
 end
 
 module Tree : sig

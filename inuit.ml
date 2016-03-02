@@ -49,84 +49,74 @@ module Nav = struct
     mutable page: 'cursor page;
     mutable next: 'cursor page list;
 
-    title: 'cursor;
-    body: 'cursor;
+    frame: 'cursor frame option;
   } constraint 'cursor = _ #cursor
 
-  and 'cursor page = string * ('cursor t -> unit)
+  and 'cursor page = string * ('cursor frame -> unit)
   constraint 'cursor = _ #cursor
+
+  and 'cursor frame = {
+    title: 'cursor;
+    body: 'cursor;
+    nav: 'cursor t;
+  } constraint 'cursor = _ #cursor
 
   let null_page : _ page = "", ignore
 
-  let not_closed t =
-    if is_closed t.body then (
-      if t.page != null_page then (
-        t.prev <- [];
-        t.next <- [];
-        t.page <- null_page;
-      );
-      false
-    ) else
-      true
+  let make title body =
+    let page = (title, body) in
+    { prev = []; page; next = []; frame = None }
 
-  let refresh t =
-    if not_closed t then (
-      clear t.title;
-      text t.title (fst t.page);
+  let update_frame t = match t.frame with None -> () | Some frame ->
+    let {title; body} = frame in
+    clear title;
+    text title (fst t.page);
+    clear body;
+    (snd t.page) frame
 
-      clear t.body;
-      (snd t.page) t
-    )
+  let goto t title body =
+    t.page <- (title, body);
+    t.next <- []
 
-  let next t =
-    match t.next with
+  let push t title body =
+    t.prev <- t.page :: t.prev;
+    goto t title body
+
+  let next t = match t.next with
     | [] -> ()
     | page :: pages ->
       t.prev <- t.page :: t.prev;
       t.page <- page;
       t.next <- pages;
-      refresh t
+      update_frame t
 
-  let prev t =
-    match t.prev with
+  let prev t = match t.prev with
     | [] -> ()
     | page :: pages ->
       t.next <- t.page :: t.next;
       t.page <- page;
       t.prev <- pages;
-      refresh t
+      update_frame t
 
   let render_header t cursor =
-    if not_closed t then (
-      link cursor "⏪" (fun _ -> prev t);
-      text cursor " ";
-      link cursor "↻" (fun _ -> refresh t);
-      text cursor " ";
-      link cursor	"⏩" (fun _ -> next t)
-    )
+    link cursor "⏪" (fun _ -> prev t);
+    text cursor " ";
+    link cursor "↻" (fun _ -> update_frame t);
+    text cursor " ";
+    link cursor	"⏩" (fun _ -> next t)
 
-  let make cursor label content =
+  let render t cursor =
     if not (is_closed cursor) then (
       let header = sub cursor in
       text cursor " ";
       let title = sub cursor in
       text cursor "\n\n";
       let body = sub cursor in
-      let t = { prev = []; page = (label, content); next = []; title; body } in
-      render_header t header;
-      refresh t
-    )
-
-  let title t =
-    t.title
-
-  let body t =
-    t.body
-
-  let modal t label content =
-    if not_closed t then (
-      t.next <- [(label, content)];
-      next t
+      let rec nav = {t with frame = Some frame}
+      and frame = { title = title; body = body; nav = nav }
+      in
+      render_header nav header;
+      update_frame nav
     )
 end
 
