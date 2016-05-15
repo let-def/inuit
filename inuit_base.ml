@@ -215,6 +215,8 @@ struct
       { buffer; left; right; observers = []; }
     ) in
     Lazy.force t'
+
+  let pipe t = t.buffer.pipe
 end
 
 type 'flags region = 'flags Region.t

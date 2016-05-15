@@ -1,6 +1,7 @@
 all: byte-code-library native-code-library
 
-SOURCES = inuit_base.mli inuit_base.ml inuit.mli inuit.ml
+MODULES = inuit_base inuit inuit_widget
+SOURCES = $(foreach MOD,$(MODULES),$(MOD).mli $(MOD).ml)
 RESULT = inuit
 PACKS = grenier
 
@@ -16,11 +17,8 @@ reinstall:
 	$(MAKE) install
 
 LIBINSTALL_FILES = \
-	inuit.mli  \
-	inuit.cmi  \
-	inuit.a    \
-	inuit.cma  \
-	inuit.cmxa
+  $(foreach MOD,$(MODULES),$(MOD).mli $(MOD).cmi $(MOD).cmx) \
+	inuit.cma  inuit.a  inuit.cmxa
 
 OCAMLFLAGS += -g
 OCAMLLDFLAGS += -g

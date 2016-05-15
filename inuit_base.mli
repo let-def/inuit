@@ -43,4 +43,7 @@ sig
 
   val left_offset  : 'flags t -> int
   val right_offset : 'flags t -> int
+
+  val create : unit -> 'flags t
+  val pipe : 'flags t -> 'flags pipe
 end
