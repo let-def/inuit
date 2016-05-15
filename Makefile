@@ -1,7 +1,8 @@
 all: byte-code-library native-code-library
 
-SOURCES = inuit.mli inuit.ml
+SOURCES = inuit_base.mli inuit_base.ml inuit.mli inuit.ml
 RESULT = inuit
+PACKS = grenier
 
 OCAMLMAKEFILE=OCamlMakefile
 -include $(OCAMLMAKEFILE)
