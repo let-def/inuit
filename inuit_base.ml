@@ -101,30 +101,27 @@ struct
   let is_open   t = Trope.member t.buffer.trope t.right
   let is_closed t = not (is_open t)
 
-  let notify_observers buffer side patch = (
+  let notify_cursor_observers buffer side cursor patch = (
     assert (buffer.status = Ready);
-    match Trope.find_before buffer.trope patch.Patch.offset with
-    | None -> ()
-    | Some cursor ->
-      let rec aux acc side patch = function
-        | [] -> acc
-        | lazy f :: fs ->
-          let acc = match f side patch with
-            | None -> acc
-            | Some f' -> f' :: acc
-          in
-          aux acc side patch fs
-      in
-      buffer.status <- Locked;
-        let lazy {observers} = Trope.content cursor in
-        let fs =
-          try aux [] side patch observers
-          with exn ->
-            buffer.status <- Ready;
-            raise exn
+    let rec aux acc side patch = function
+      | [] -> acc
+      | lazy f :: fs ->
+        let acc = match f side patch with
+          | None -> acc
+          | Some f' -> f' :: acc
         in
+        aux acc side patch fs
+    in
+    buffer.status <- Locked;
+    let lazy {observers} = Trope.content cursor in
+    let fs =
+      try aux [] side patch observers
+      with exn ->
         buffer.status <- Ready;
-        List.iter (fun f -> f ()) fs;
+        raise exn
+    in
+    buffer.status <- Ready;
+    List.iter (fun f -> f ()) fs;
   )
 
   let check_local_change name buffer = (
@@ -136,9 +133,17 @@ struct
     | Ready -> ()
   )
 
-  let local_change buffer patch = (
-    notify_observers buffer `local patch;
+  let local_change buffer cursor patch = (
+    notify_cursor_observers buffer `local cursor patch;
     Pipe.commit buffer.pipe patch;
+  )
+
+  let notify_observers buffer side patch = (
+    assert (buffer.status = Ready);
+    match Trope.find_before buffer.trope patch.Patch.offset with
+    | None -> ()
+    | Some cursor ->
+      notify_cursor_observers buffer side cursor patch
   )
 
   let remote_change b patch = (
@@ -149,10 +154,14 @@ struct
                    (buffer under observation)"
     | Ready ->
       let open Patch in
+      let c = Trope.find_before b.trope patch.offset in
       if patch.old_len <> 0 then
         b.trope <- Trope.remove ~at:patch.offset ~len:patch.old_len b.trope;
-      if patch.new_len <> 0 then
-        b.trope <- Trope.insert ~at:patch.offset ~len:patch.new_len b.trope;
+      if patch.new_len <> 0 then (
+        b.trope <- match c with
+          | None -> Trope.insert ~left_of:() ~at:patch.offset ~len:patch.new_len b.trope;
+          | Some c -> Trope.insert_after b.trope c patch.new_len
+      );
       notify_observers b `remote patch
   )
 
@@ -164,7 +173,7 @@ struct
       let offset = Trope.position trope t.right in
       let patch = Patch.make ~offset ~replace:0 flags text in
       buffer.trope <- Trope.insert_before trope t.right patch.Patch.new_len;
-      local_change buffer patch;
+      local_change buffer t.right patch;
     )
 
   let clear t =
@@ -176,7 +185,7 @@ struct
       let length = Trope.position trope t.right - offset in
       buffer.trope <- Trope.remove_between trope t.left t.right;
       let patch = Patch.make ~offset ~replace:length [] "" in
-      local_change buffer patch;
+      local_change buffer t.left patch;
     )
 
   let sub ?observer t =
