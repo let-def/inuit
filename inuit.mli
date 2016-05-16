@@ -2,27 +2,33 @@ include (module type of struct include Inuit_base end)
 
 type 'flags cursor
 
-val text    : 'flags cursor -> ?flags:'flags list -> string -> unit
-val clear   : 'flags cursor -> unit
-val sub     : 'flags cursor -> 'flags cursor
-val observe : 'flags cursor ->
-  ('flags cursor -> side -> 'flags patch -> (unit -> unit) option) -> 'flags cursor
+module Cursor : sig
+  type 'flags clickable = [> `Clickable | `Clicked] as 'flags
 
-val is_closed  : 'flags cursor -> bool
-val get_flags  : 'flags cursor -> 'flags list
-val with_flags : 'flags list -> 'flags cursor -> 'flags cursor
-val region     : 'flags cursor -> 'flags region
+  val null : _ cursor
 
-val action : ([> `Clickable | `Clicked] as 'flags) cursor ->
-  ('flags cursor -> unit) -> 'flags cursor
+  val text    : 'flags cursor -> ?flags:'flags list -> string -> unit
+  val clear   : 'flags cursor -> unit
+  val sub     : 'flags cursor -> 'flags cursor
+  val observe : 'flags cursor ->
+    ('flags cursor -> side -> 'flags patch -> (unit -> unit) option) -> 'flags cursor
 
-val printf : 'flags cursor -> ?flags:'flags list ->
-  ('a, unit, string, unit) format4 -> 'a
+  val is_closed  : 'flags cursor -> bool
+  val get_flags  : 'flags cursor -> 'flags list
+  val with_flags : 'flags list -> 'flags cursor -> 'flags cursor
+  val region     : 'flags cursor -> 'flags region
 
-val link : ([> `Clickable | `Clicked] as 'flags) cursor ->
-  ?flags:'flags list -> ('a, unit, string, unit) format4 ->
-  ('flags cursor -> unit) ->'a
+  val clickable : 'flags clickable cursor ->
+    ('flags cursor -> unit) -> 'flags cursor
 
-val cursor_of_region : ?flags:'flags list -> 'flags region -> 'flags cursor
+  val printf : 'flags cursor -> ?flags:'flags list ->
+    ('a, unit, string, unit) format4 -> 'a
 
-val make : unit -> 'flags cursor * 'flags pipe
+  val link : 'flags clickable cursor ->
+    ?flags:'flags list -> ('a, unit, string, unit) format4 ->
+    ('flags cursor -> unit) ->'a
+
+  val cursor_of_region : ?flags:'flags list -> 'flags region -> 'flags cursor
+
+  val make : unit -> 'flags cursor * 'flags pipe
+end

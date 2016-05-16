@@ -1,6 +1,8 @@
 open Inuit
+open Inuit.Cursor
 
 type 'a clickable = [> `Clickable | `Clicked ] as 'a
+type 'a editable = [> `Editable ] as 'a
 
 module Nav = struct
 
@@ -101,7 +103,7 @@ module Tree = struct
     indent t;
     (*text t.cursor "  ";*)
     let result = match action with
-      | Some action -> Inuit.action t.cursor action
+      | Some action -> clickable t.cursor action
       | None -> sub t.cursor
     in
     text t.cursor "\n";
@@ -124,8 +126,8 @@ module Tree = struct
       );
     text t.cursor " ";
     let result = match action with
-      | None -> Inuit.sub t.cursor
-      | Some action -> Inuit.action t.cursor action
+      | None -> sub t.cursor
+      | Some action -> clickable t.cursor action
     in
     text t.cursor "\n";
     let t' = { indent = t.indent + 1; cursor = sub t.cursor } in
@@ -142,4 +144,122 @@ module Tree = struct
       t.cursor
 
   let clear t = clear t.cursor
+end
+
+module Check = struct
+  type 'flags t = {
+    mutable cursor: 'flags cursor;
+    mutable state: bool;
+  }
+
+  let render t = (
+    clear t.cursor;
+    text t.cursor (if t.state then "x" else "_")
+  )
+
+  let make ?(state=false) ?(on_change=ignore) cursor = (
+    text cursor "[";
+    let t = { cursor; state } in
+    t.cursor <- clickable cursor (fun check ->
+        t.state <- not t.state;
+        render t;
+        on_change t
+      );
+    render t;
+    text cursor "]";
+    t
+  )
+
+  let change t ~state =
+    t.state <- state;
+    render t
+
+  let state t = t.state
+end
+
+module Edit = struct
+  type 'flags t = {
+    mutable cursor: 'flags cursor;
+    mutable state: string;
+  }
+
+  let render t = (
+    clear t.cursor;
+    text t.cursor t.state;
+  )
+
+  let make ?(state=" ") ?on_change cursor = (
+    let t = { cursor; state } in
+    text cursor "[|";
+    let on_change = match on_change with
+      | None -> None
+      | Some f -> Some (fun _ -> f t)
+    in
+    let cursor = with_flags (`Editable :: get_flags cursor) cursor in
+    t.cursor <- observe cursor (fun cursor' side p ->
+        let offset = Region.unsafe_left_offset (region cursor') in
+        let delta = p.Patch.offset - offset in
+        let sl = String.sub t.state 0 delta in
+        let offset = delta + p.Patch.old_len in
+        let sr = String.sub t.state offset (String.length t.state - offset)  in
+        t.state <- sl ^ p.Patch.text ^ sr;
+        on_change
+      );
+    text cursor "|]";
+    render t;
+  )
+
+  let change t ~state =
+    t.state <- state;
+    render t
+
+  let state t = t.state
+end
+
+module Slider =
+struct
+  type 'flags t = {
+    mutable cursor : 'flags cursor;
+    mutable state : (int * int);
+  }
+
+  let render t = (
+    let str =
+      match t.state with
+      | (0, max) -> String.make max '-'
+      | (pos, max) when pos >= max -> String.make max '#'
+      | (pos, max) -> String.make pos '#' ^ String.make (max - pos) '-'
+    in
+    clear t.cursor;
+    text t.cursor str;
+  )
+
+  let make ?(state = (0, 20)) ?on_change cursor = (
+    let t = { cursor; state } in
+    text cursor "|";
+    text cursor ~flags:[`Editable] " ";
+    let update = match on_change with
+      | None -> Some (fun _ -> render t)
+      | Some f -> Some (fun _ -> render t; f t)
+    in
+    let cursor = with_flags (`Editable :: get_flags cursor) cursor in
+    t.cursor <- observe cursor (fun cursor' side p ->
+        if side = `remote then (
+          let delta = p.Patch.new_len - p.Patch.old_len in
+          let pos, max = t.state in
+          let pos = pos + delta in
+          let pos = if pos < 0 then 0 else if pos > max then max else pos in
+          t.state <- (pos, max);
+          update
+        ) else None
+      );
+    text cursor "|";
+    render t;
+  )
+
+  let change t ~state =
+    t.state <- state;
+    render t
+
+  let state t = t.state
 end

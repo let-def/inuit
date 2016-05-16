@@ -41,9 +41,10 @@ sig
   val sub       : ?observer:'flags observer -> 'flags t -> 'flags t
   val is_closed : 'flags t -> bool
 
-  val left_offset  : 'flags t -> int
-  val right_offset : 'flags t -> int
+  val unsafe_left_offset  : 'flags t -> int
+  val unsafe_right_offset : 'flags t -> int
 
-  val create : unit -> 'flags t
-  val pipe : 'flags t -> 'flags pipe
+  val create : unit -> 'flags t * 'flags pipe
+
+  val null : _ region
 end

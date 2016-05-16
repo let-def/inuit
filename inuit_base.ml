@@ -75,7 +75,7 @@ type 'flags pipe = 'flags Pipe.t
 
 type side = [ `local | `remote ]
 
-module Region =
+module Concrete_region =
 struct
 
   type status =
@@ -95,8 +95,8 @@ struct
     pipe : 'flags pipe;
   }
 
-  let left_offset  t = Trope.position t.buffer.trope t.left
-  let right_offset t = Trope.position t.buffer.trope t.right
+  let unsafe_left_offset  t = Trope.position t.buffer.trope t.left
+  let unsafe_right_offset t = Trope.position t.buffer.trope t.right
 
   let is_open   t = Trope.member t.buffer.trope t.right
   let is_closed t = not (is_open t)
@@ -214,9 +214,51 @@ struct
       and local patch = remote_change buffer patch in
       { buffer; left; right; observers = []; }
     ) in
-    Lazy.force t'
+    let lazy t' = t' in
+    t', t'.buffer.pipe
+end
 
-  let pipe t = t.buffer.pipe
+module Region =
+struct
+  type 'flags t =
+    | Concrete of 'flags Concrete_region.t
+    | Null
+
+  let append t flags text =
+    match t with
+    | Null -> ()
+    | Concrete t -> Concrete_region.append t flags text
+
+  let clear = function
+    | Null -> ()
+    | Concrete t -> Concrete_region.clear t
+
+  let sub ?observer = function
+    | Null -> Null
+    | Concrete t ->
+      let observer = match observer with
+        | None -> None
+        | Some f -> Some (fun region -> f (Concrete region))
+      in
+      Concrete (Concrete_region.sub ?observer t)
+
+  let is_closed = function
+    | Null -> true
+    | Concrete t -> Concrete_region.is_closed t
+
+  let unsafe_left_offset = function
+    | Null -> 0
+    | Concrete t -> Concrete_region.unsafe_left_offset t
+
+  let unsafe_right_offset = function
+    | Null -> 0
+    | Concrete t -> Concrete_region.unsafe_right_offset t
+
+  let create () =
+    let region, pipe = Concrete_region.create () in
+    Concrete region, pipe
+
+  let null = Null
 end
 
 type 'flags region = 'flags Region.t
