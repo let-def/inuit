@@ -28,8 +28,23 @@ struct
 
   let is_closed t = Region.is_closed t.region
 
+  let mem_flag flag cursor =
+    List.mem flag cursor.flags
+
+  let add_flag flag cursor =
+    if mem_flag flag cursor
+    then cursor
+    else {cursor with flags = flag :: cursor.flags}
+
+  let rem_flag flag cursor =
+    if mem_flag flag cursor
+    then {cursor with flags = List.filter ((<>) flag) cursor.flags}
+    else cursor
+
   let get_flags t = t.flags
+
   let with_flags flags t = { t with flags }
+
   let region t = t.region
 
   let clickable t f =

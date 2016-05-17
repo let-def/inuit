@@ -14,9 +14,14 @@ module Cursor : sig
     ('flags cursor -> side -> 'flags patch -> (unit -> unit) option) -> 'flags cursor
 
   val is_closed  : 'flags cursor -> bool
+
+  val region     : 'flags cursor -> 'flags region
+
+  val add_flag   : 'flags -> 'flags cursor -> 'flags cursor
+  val rem_flag   : 'flags -> 'flags cursor -> 'flags cursor
+  val mem_flag   : 'flags -> 'flags cursor -> bool
   val get_flags  : 'flags cursor -> 'flags list
   val with_flags : 'flags list -> 'flags cursor -> 'flags cursor
-  val region     : 'flags cursor -> 'flags region
 
   val clickable : 'flags clickable cursor ->
     ('flags cursor -> unit) -> 'flags cursor

@@ -195,15 +195,24 @@ module Edit = struct
       | None -> None
       | Some f -> Some (fun _ -> f t)
     in
-    let cursor = with_flags (`Editable :: get_flags cursor) cursor in
-    t.cursor <- observe cursor (fun cursor' side p ->
+    let edit = add_flag `Editable cursor in
+    ignore (observe edit (fun cursor' side p ->
+        if side = `local then None
+        else Some (fun _ ->
+            clear cursor';
+            text cursor' " ";
+          )
+      ) : _ cursor);
+    t.cursor <- observe edit (fun cursor' side p ->
         let offset = Region.unsafe_left_offset (region cursor') in
         let delta = p.Patch.offset - offset in
         let sl = String.sub t.state 0 delta in
         let offset = delta + p.Patch.old_len in
         let sr = String.sub t.state offset (String.length t.state - offset)  in
         t.state <- sl ^ p.Patch.text ^ sr;
-        on_change
+        if side = `remote then
+          on_change
+        else None
       );
     text cursor "|]";
     render t;
