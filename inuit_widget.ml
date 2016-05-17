@@ -198,13 +198,8 @@ module Edit = struct
     mutable state: string;
   }
 
-  let render t = (
-    clear t.cursor;
-    text t.cursor t.state;
-  )
-
   let make ?(state="") ?on_change cursor = (
-    let t = { cursor; state } in
+    let t = { cursor; state = "" } in
     let on_change = match on_change with
       | None -> None
       | Some f -> Some (fun _ -> f t)
@@ -222,13 +217,13 @@ module Edit = struct
              on_change
            else None
         );
+    text t.cursor state;
     text cursor "|]";
-    render t;
   )
 
   let change t ~state =
-    t.state <- state;
-    render t
+    clear t.cursor;
+    text t.cursor state
 
   let state t = t.state
 end
