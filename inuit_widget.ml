@@ -177,6 +177,21 @@ module Check = struct
   let state t = t.state
 end
 
+let prepare_editable ~prompt cursor = (
+  let cursor = add_flag `Editable cursor in
+  let rubber = observe cursor
+      (fun cursor' side p ->
+         if side = `local then None
+         else Some (fun _ ->
+             clear cursor';
+             text cursor' prompt;
+           )
+      )
+  in
+  text rubber prompt;
+  cursor
+)
+
 module Edit = struct
   type 'flags t = {
     mutable cursor: 'flags cursor;
@@ -188,32 +203,25 @@ module Edit = struct
     text t.cursor t.state;
   )
 
-  let make ?(state=" ") ?on_change cursor = (
+  let make ?(state="") ?on_change cursor = (
     let t = { cursor; state } in
-    text cursor "[|";
     let on_change = match on_change with
       | None -> None
       | Some f -> Some (fun _ -> f t)
     in
-    let edit = add_flag `Editable cursor in
-    ignore (observe edit (fun cursor' side p ->
-        if side = `local then None
-        else Some (fun _ ->
-            clear cursor';
-            text cursor' " ";
-          )
-      ) : _ cursor);
-    t.cursor <- observe edit (fun cursor' side p ->
-        let offset = Region.unsafe_left_offset (region cursor') in
-        let delta = p.Patch.offset - offset in
-        let sl = String.sub t.state 0 delta in
-        let offset = delta + p.Patch.old_len in
-        let sr = String.sub t.state offset (String.length t.state - offset)  in
-        t.state <- sl ^ p.Patch.text ^ sr;
-        if side = `remote then
-          on_change
-        else None
-      );
+    text cursor "[";
+    t.cursor <- observe (prepare_editable ~prompt:"|" cursor)
+        (fun cursor' side p ->
+           let offset = Region.unsafe_left_offset (region cursor') in
+           let delta = p.Patch.offset - offset in
+           let sl = String.sub t.state 0 delta in
+           let offset = delta + p.Patch.old_len in
+           let sr = String.sub t.state offset (String.length t.state - offset)  in
+           t.state <- sl ^ p.Patch.text ^ sr;
+           if side = `remote then
+             on_change
+           else None
+        );
     text cursor "|]";
     render t;
   )
@@ -243,25 +251,33 @@ struct
     text t.cursor str;
   )
 
+  let count_chars str c =
+    let count = ref 0 in
+    for i = 0 to String.length str - 1 do
+      if str.[i] = c then incr count
+    done;
+    !count
+
   let make ?(state = (0, 20)) ?on_change cursor = (
     let t = { cursor; state } in
-    text cursor "|";
-    text cursor ~flags:[`Editable] " ";
-    let update = match on_change with
-      | None -> Some (fun _ -> render t)
-      | Some f -> Some (fun _ -> render t; f t)
-    in
-    let cursor = with_flags (`Editable :: get_flags cursor) cursor in
-    t.cursor <- observe cursor (fun cursor' side p ->
-        if side = `remote then (
-          let delta = p.Patch.new_len - p.Patch.old_len in
-          let pos, max = t.state in
-          let pos = pos + delta in
-          let pos = if pos < 0 then 0 else if pos > max then max else pos in
-          t.state <- (pos, max);
-          update
-        ) else None
-      );
+    t.cursor <- observe (prepare_editable ~prompt:"|" cursor)
+        (let update = match on_change with
+            | None -> Some (fun _ -> render t)
+            | Some f -> Some (fun _ -> render t; f t)
+         in fun cursor' side p ->
+           if side = `remote then (
+             let delta =
+               p.Patch.new_len
+               - p.Patch.old_len
+               - count_chars p.Patch.text '-' * 2
+             in
+             let pos, max = t.state in
+             let pos = pos + delta in
+             let pos = if pos < 0 then 0 else if pos > max then max else pos in
+             t.state <- (pos, max);
+             update
+           ) else None
+        );
     text cursor "|";
     render t;
   )

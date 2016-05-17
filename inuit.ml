@@ -48,10 +48,7 @@ struct
   let region t = t.region
 
   let clickable t f =
-    let t =
-      if List.mem `Clickable t.flags then t
-      else {t with flags = `Clickable :: t.flags}
-    in
+    let t = add_flag `Clickable t in
     observe t (
       fun t' side patch ->
         if List.mem `Clicked patch.Patch.flags then

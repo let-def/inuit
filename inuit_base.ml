@@ -224,7 +224,7 @@ struct
       | None -> []
       | Some region -> notify_observers b `remote region ~stop_at:[] patch
     in
-    b.trope <- Trope.insert ~left_of:() ~at:offset ~len:new_len b.trope;
+    b.trope <- Trope.insert ~at:offset ~len:new_len b.trope;
     exec_observed observed
   )
 
