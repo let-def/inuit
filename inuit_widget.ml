@@ -4,8 +4,8 @@ open Inuit.Cursor
 type 'a clickable = [> `Clickable | `Clicked ] as 'a
 type 'a editable = [> `Editable ] as 'a
 
-module Nav = struct
-
+module Nav =
+struct
   type 'flags t = {
     mutable prev: 'flags page list;
     mutable page: 'flags page;
@@ -82,8 +82,8 @@ module Nav = struct
     )
 end
 
-module Tree = struct
-
+module Tree =
+struct
   type 'flags t = {
     indent: int;
     cursor: 'flags cursor;
@@ -146,7 +146,8 @@ module Tree = struct
   let clear t = clear t.cursor
 end
 
-module Check = struct
+module Check =
+struct
   type 'flags t = {
     mutable cursor: 'flags cursor;
     mutable state: bool;
@@ -192,7 +193,8 @@ let prepare_editable ~prompt cursor = (
   cursor
 )
 
-module Edit = struct
+module Edit =
+struct
   type 'flags t = {
     mutable cursor: 'flags cursor;
     mutable state: string;
@@ -208,14 +210,16 @@ module Edit = struct
     t.cursor <- observe (prepare_editable ~prompt:"|" cursor)
         (fun cursor' side p ->
            let offset = Region.unsafe_left_offset (region cursor') in
-           let delta = p.Patch.offset - offset in
-           let sl = String.sub t.state 0 delta in
-           let offset = delta + p.Patch.old_len in
-           let sr = String.sub t.state offset (String.length t.state - offset)  in
-           t.state <- sl ^ p.Patch.text ^ sr;
-           if side = `remote then
-             on_change
-           else None
+           match Patch.utf8_offset t.state (p.Patch.offset - offset) with
+           | exception Not_found -> None
+           | offset ->
+             let sl = String.sub t.state 0 offset in
+             let offset = Patch.utf8_offset t.state ~offset p.Patch.old_len in
+             let sr = String.sub t.state offset (String.length t.state - offset)  in
+             t.state <- sl ^ p.Patch.text ^ sr;
+             if side = `remote then
+               on_change
+             else None
         );
     text t.cursor state;
     text cursor "|]";

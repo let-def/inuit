@@ -8,7 +8,7 @@ struct
     flags   : 'flags list;
   }
 
-  let text_length str =
+  let utf8_length str =
     let count = ref 0 in
     for i = 0 to String.length str - 1 do
       let c = Char.code str.[i] in
@@ -17,10 +17,22 @@ struct
     done;
     !count
 
+  let utf8_offset str ?(offset=0) index =
+    let index = ref index and offset = ref offset and len = String.length str in
+    while !index > 0 && !offset < len do
+      incr offset;
+      decr index;
+      while !offset < len && (Char.code str.[!offset] land 0xC0 = 0x80) do
+        incr offset;
+      done;
+    done;
+    if !index > 0 then raise Not_found;
+    !offset
+
   let make ~offset ?(replace=0) flags text = {
     offset  = offset;
     old_len = replace;
-    new_len = text_length text;
+    new_len = utf8_length text;
     text    = text;
     flags   = flags;
   }

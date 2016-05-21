@@ -8,7 +8,8 @@ sig
     flags   : 'flags list;
   }
 
-  val text_length : string -> int
+  val utf8_length : string -> int
+  val utf8_offset : string -> ?offset:int -> int -> int
   val make : offset:int -> ?replace:int -> 'flags list -> string -> 'flags t
 end
 
