@@ -29,9 +29,8 @@ module Cursor : sig
   val printf : 'flags cursor -> ?flags:'flags list ->
     ('a, unit, string, unit) format4 -> 'a
 
-  val link : 'flags clickable cursor ->
-    ?flags:'flags list -> ('a, unit, string, unit) format4 ->
-    ('flags cursor -> unit) ->'a
+  val link : 'flags clickable cursor -> ?flags:'flags list ->
+       ('a, unit, string, ('flags cursor -> unit) -> unit) format4 -> 'a
 
   val cursor_of_region : ?flags:'flags list -> 'flags region -> 'flags cursor
 

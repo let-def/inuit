@@ -59,9 +59,8 @@ struct
   let printf t ?flags fmt =
     Printf.ksprintf (text t ?flags) fmt
 
-  let link t ?flags fmt f =
-    let t' = clickable t f in
-    Printf.ksprintf (text t' ?flags) fmt
+  let link t ?flags fmt =
+    Printf.ksprintf (fun str f -> text (clickable t f) ?flags str) fmt
 
   let cursor_of_region ?(flags=[]) region =
     { region; flags = flags }
