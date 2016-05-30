@@ -100,6 +100,7 @@ struct
     right  : 'flags t lazy_t Trope.cursor;
     parent : 'flags t lazy_t;
     observers : (side -> 'flags patch -> (unit -> unit) option) lazy_t list;
+    mutable closed : bool;
   }
 
   and 'flags buffer = {
@@ -111,7 +112,10 @@ struct
   let unsafe_left_offset  t = Trope.position t.buffer.trope t.left
   let unsafe_right_offset t = Trope.position t.buffer.trope t.right
 
-  let is_open   t = Trope.member t.buffer.trope t.right
+  let is_open   t =
+    not t.closed &&
+    (Trope.member t.buffer.trope t.right || (t.closed <- true; false))
+
   let is_closed t = not (is_open t)
 
   let notify_observers buffer side region ~stop_at patch = (
@@ -415,7 +419,7 @@ struct
         pipe = { Pipe. local; status = Pipe.Pending };
       }
       and local patch = remote_change buffer patch in
-      { buffer; left; right; observers = []; parent = t' }
+      { buffer; left; right; observers = []; parent = t'; closed = false }
     ) in
     let lazy t' = t' in
     t', t'.buffer.pipe
