@@ -39,6 +39,7 @@ sig
 
   val append    : 'flags t -> 'flags list -> string -> unit
   val clear     : 'flags t -> unit
+  val kill      : 'flags t -> unit
   val sub       : ?observer:'flags observer -> 'flags t -> 'flags t
   val is_closed : 'flags t -> bool
 

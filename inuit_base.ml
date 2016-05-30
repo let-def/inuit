@@ -353,7 +353,8 @@ struct
       exec_observed observed;
     )
 
-  let clear t =
+
+  let generic_clear f t =
     if is_open t then (
       let buffer = t.buffer in
       check_local_change "clear" buffer;
@@ -362,10 +363,24 @@ struct
       let length = Trope.position trope t.right - offset in
       let patch = Patch.make ~offset ~replace:length [] "" in
       let observed = notify_observers buffer `local t ~stop_at:[] patch in
-      buffer.trope <- Trope.remove_between trope t.left t.right;
+      buffer.trope <- f t buffer.trope;
       Pipe.commit buffer.pipe patch;
       exec_observed observed;
     )
+
+  let clear t =
+    generic_clear
+      (fun t trope -> Trope.remove_between trope t.left t.right)
+      t
+
+  let kill t =
+    generic_clear
+      (fun t trope ->
+         let trope = Trope.remove_between trope t.left t.right in
+         let trope = Trope.rem_cursor trope t.left in
+         let trope = Trope.rem_cursor trope t.right in
+         trope)
+      t
 
   let sub ?observer t =
     if is_open t then
@@ -420,6 +435,10 @@ struct
   let clear = function
     | Null -> ()
     | Concrete t -> Concrete_region.clear t
+
+  let kill = function
+    | Null -> ()
+    | Concrete t -> Concrete_region.kill t
 
   let sub ?observer = function
     | Null -> Null

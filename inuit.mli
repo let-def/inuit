@@ -9,6 +9,7 @@ module Cursor : sig
 
   val text    : 'flags cursor -> ?flags:'flags list -> string -> unit
   val clear   : 'flags cursor -> unit
+  val kill    : 'flags cursor -> unit
   val sub     : 'flags cursor -> 'flags cursor
   val observe : 'flags cursor ->
     ('flags cursor -> side -> 'flags patch -> (unit -> unit) option) -> 'flags cursor

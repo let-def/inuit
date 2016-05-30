@@ -17,6 +17,9 @@ struct
   let clear t =
     Region.clear t.region
 
+  let kill t =
+    Region.kill t.region
+
   let sub t = { region = Region.sub t.region; flags = t.flags }
 
   let observe { region; flags } f =
