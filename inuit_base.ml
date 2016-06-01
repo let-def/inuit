@@ -190,13 +190,13 @@ struct
     | _ -> None
   )
 
-  let insertion_cursor trope position = (
+  let insertion_cursor ~left_leaning trope position = (
     match Trope.find_before trope position with
     | None -> (position, None)
     | Some cursor0 ->
       match position - Trope.position trope cursor0 with
       | n when n < 0 -> assert false
-      | 0 -> (
+      | 0 when left_leaning -> (
           match look_for_empty trope position cursor0 with
           | Some cursor -> (0, Some cursor)
           | None ->
@@ -238,7 +238,7 @@ struct
     let trope = b.trope in
     let {Patch. old_len; new_len; offset; _} = patch in
     (* Find bounds *)
-    let left_offset, left_cursor = insertion_cursor trope offset in
+    let left_offset, left_cursor = insertion_cursor ~left_leaning:true trope offset in
     let right_bound = replacement_bound trope (offset + old_len) in
     (* Find affected regions and ancestor *)
     let left_region =
@@ -313,7 +313,9 @@ struct
   let remote_insert b patch = (
     let {Patch. new_len; offset; _} = patch in
     let trope = b.trope in
-    let left_offset, left_cursor = insertion_cursor trope offset in
+    let left_leaning = new_len > 0 in
+    let left_offset, left_cursor =
+      insertion_cursor ~left_leaning trope offset in
     let left_region = match left_cursor with
       | None -> None
       | Some cursor -> region_after cursor
