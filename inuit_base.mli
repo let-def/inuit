@@ -23,14 +23,14 @@ type 'flags observer =
 
 module Pipe :
 sig
-  type 'flags t = 'flags pipe
+  type 'msg t = 'msg pipe
 
-  val make : change:('flags patch -> unit) -> 'flags t
-  val commit : 'flags t -> 'flags patch -> unit
-  val status : 'flags t -> [ `Pending | `Connected ]
+  val make : change:('msg -> unit) -> 'msg t
+  val commit : 'msg t -> 'msg -> unit
+  val status : 'msg t -> [ `Pending | `Connected ]
 
   (* Fails with Invalid_argument if one of the pipe is closed or connected *)
-  val connect : a:'flags t -> b:'flags t -> unit
+  val connect : a:'msg t -> b:'msg t -> unit
 end
 
 module Region :
@@ -46,7 +46,7 @@ sig
   val unsafe_left_offset  : 'flags t -> int
   val unsafe_right_offset : 'flags t -> int
 
-  val create : unit -> 'flags t * 'flags pipe
+  val create : unit -> 'flags t * 'flags patch pipe
 
   val null : _ region
 end

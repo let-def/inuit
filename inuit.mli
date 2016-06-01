@@ -35,5 +35,5 @@ module Cursor : sig
 
   val cursor_of_region : ?flags:'flags list -> 'flags region -> 'flags cursor
 
-  val make : unit -> 'flags cursor * 'flags pipe
+  val make : unit -> 'flags cursor * 'flags patch pipe
 end

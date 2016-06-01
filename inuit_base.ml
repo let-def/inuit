@@ -43,13 +43,13 @@ type 'flags patch = 'flags Patch.t
 module Pipe =
 struct
 
-  type 'flags status =
-    | Connected of ('flags patch -> unit)
+  type 'msg status =
+    | Connected of ('msg -> unit)
     | Pending
 
-  type 'flags t = {
-    local  : 'flags patch -> unit;
-    mutable status : 'flags status;
+  type 'msg t = {
+    local  : 'msg -> unit;
+    mutable status : 'msg status;
   }
 
   let make ~change:local = {
@@ -76,14 +76,14 @@ struct
     b.status <- Connected a.local;
   )
 
-  let commit t patch =
+  let commit t msg =
     match t.status with
     | Pending -> invalid_arg "Inuit.Pipe.commit: sending data to unconnected pipe"
-    | Connected f -> f patch
+    | Connected f -> f msg
 
 end
 
-type 'flags pipe = 'flags Pipe.t
+type 'msg pipe = 'msg Pipe.t
 
 type side = [ `local | `remote ]
 
@@ -106,7 +106,7 @@ struct
   and 'flags buffer = {
     mutable trope : 'flags t lazy_t Trope.t;
     mutable status : status;
-    pipe : 'flags pipe;
+    pipe : 'flags patch pipe;
   }
 
   let unsafe_left_offset  t = Trope.position t.buffer.trope t.left
