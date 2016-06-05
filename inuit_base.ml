@@ -42,44 +42,86 @@ type 'flags patch = 'flags Patch.t
 
 module Pipe =
 struct
-
-  type 'msg status =
-    | Connected of ('msg -> unit)
-    | Pending
-
   type 'msg t = {
-    local  : 'msg -> unit;
+    mutable receive      : 'msg -> unit;
+    mutable on_connected : 'msg t -> unit;
+    mutable on_closed    : unit -> unit;
     mutable status : 'msg status;
   }
 
-  let make ~change:local = {
-    local; status = Pending;
-  }
+  and 'msg status =
+    | Pending
+    | Connected of 'msg t
+    | Closed
+
+  let ignore0 _ = ()
+
+  let setup () =
+    let result = {
+      receive = (fun _ -> invalid_arg "Inuit.Pipe.setup: pipe not initialized");
+      on_connected = ignore0;
+      on_closed = ignore0;
+      status = Pending
+    } in
+    result,
+    (fun ~on_connected ~on_closed ~receive ->
+       result.on_connected <- on_connected;
+       result.on_closed <- on_closed;
+       result.receive <- receive)
+
+  let make ?(on_connected=ignore) ?(on_closed=ignore) receive =
+    { receive; on_connected; on_closed; status = Pending }
+
+  let send t msg =
+    match t.status with
+    | Connected remote ->
+      remote.receive msg
+    | Pending ->
+      invalid_arg "Inuit.Pipe.send: sending data to unconnected pipe"
+    | Closed ->
+      invalid_arg "Inuit.Pipe.send: sending data to closed pipe"
+
+  let close t =
+    match t.status with
+    | Closed -> ()
+    | Pending ->
+      t.status <- Closed;
+      t.on_closed ();
+      t.on_connected <- ignore0;
+      t.receive <- ignore0;
+      t.on_closed <- ignore0;
+    | Connected remote ->
+      t.status <- Closed;
+      remote.status <- Closed;
+      t.on_closed ();
+      remote.on_closed ();
+      t.receive <- ignore0;
+      t.on_closed <- ignore0;
+      remote.receive <- ignore0;
+      remote.on_closed <- ignore0
+
+  let connect ~a ~b =
+    match a.status, b.status with
+    | Pending, Pending ->
+      a.status <- Connected b;
+      b.status <- Connected a;
+      a.on_connected a;
+      b.on_connected b;
+      a.on_connected <- ignore0;
+      b.on_connected <- ignore0;
+    | _ ->
+      let to_str = function
+        | Pending -> "pending"
+        | Closed -> "already closed"
+        | Connected _ -> "already connected"
+      in
+      invalid_arg ("Inuit.Pipe.connect: pipe a is " ^ to_str a.status ^
+                   "and pipe b is " ^ to_str b.status)
 
   let status t = match t.status with
     | Pending -> `Pending
     | Connected _ -> `Connected
-
-  let connect_check name t =
-    match status t with
-    | `Connected ->
-      invalid_arg ("Inuit.Pipe.connect: "^name^" already connected")
-    | `Closed ->
-      invalid_arg ("Inuit.Pipe.connect: "^name^" closed")
-    | `Pending -> ()
-
-  let connect ~a ~b = (
-    if a == b then invalid_arg "Inuit.Pipe.connect: same pipe";
-    connect_check "a" a;
-    connect_check "b" b;
-    a.status <- Connected b.local;
-    b.status <- Connected a.local;
-  )
-
-  let commit t msg =
-    match t.status with
-    | Pending -> invalid_arg "Inuit.Pipe.commit: sending data to unconnected pipe"
-    | Connected f -> f msg
+    | Closed -> `Closed
 
 end
 
@@ -106,7 +148,7 @@ struct
   and 'flags buffer = {
     mutable trope : 'flags t lazy_t Trope.t;
     mutable status : status;
-    pipe : 'flags patch pipe;
+    mutable pipe_send : 'flags patch -> unit;
   }
 
   let unsafe_left_offset  t = Trope.position t.buffer.trope t.left
@@ -355,7 +397,7 @@ struct
       let patch = Patch.make ~offset ~replace:0 flags text in
       let observed = notify_observers buffer `local t ~stop_at:[] patch in
       buffer.trope <- Trope.insert_before trope t.right patch.Patch.new_len;
-      Pipe.commit buffer.pipe patch;
+      buffer.pipe_send patch;
       exec_observed observed;
     )
 
@@ -370,7 +412,7 @@ struct
       let patch = Patch.make ~offset ~replace:length [] "" in
       let observed = notify_observers buffer `local t ~stop_at:[] patch in
       buffer.trope <- f t buffer.trope;
-      Pipe.commit buffer.pipe patch;
+      buffer.pipe_send patch;
       exec_observed observed;
     )
 
@@ -415,16 +457,16 @@ struct
       let trope = Trope.create () in
       let trope, left  = Trope.put_cursor trope ~at:0 t' in
       let trope, right = Trope.put_after  trope left  t' in
-      let rec buffer = {
-        trope;
-        status = Ready;
-        pipe = { Pipe. local; status = Pipe.Pending };
-      }
-      and local patch = remote_change buffer patch in
+      let buffer = { trope; status = Ready; pipe_send = ignore } in
       { buffer; left; right; observers = []; parent = t'; closed = false }
     ) in
     let lazy t' = t' in
-    t', t'.buffer.pipe
+    let buffer = t'.buffer in
+    let on_closed () = buffer.trope <- Trope.clear buffer.trope in
+    let on_receive msg = remote_change buffer msg in
+    let pipe = Pipe.make ~on_closed on_receive in
+    t'.buffer.pipe_send <- Pipe.send pipe;
+    t', pipe
 end
 
 module Region =

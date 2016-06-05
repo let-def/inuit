@@ -13,25 +13,34 @@ sig
   val make : offset:int -> ?replace:int -> 'flags list -> string -> 'flags t
 end
 
+module Pipe :
+sig
+  type 'msg t
+
+  val setup : unit ->
+    'msg t * (on_connected:('msg t -> unit) -> on_closed:(unit -> unit) ->
+              receive:('msg -> unit) -> unit)
+
+  val make :
+    ?on_connected:('msg t -> unit) ->
+    ?on_closed:(unit -> unit) ->
+    ('msg -> unit) -> 'msg t
+
+  val send : 'msg t -> 'msg -> unit
+  val close : 'msg t -> unit
+  val status : 'msg t -> [ `Pending | `Connected | `Closed ]
+
+  (* Fails with Invalid_argument if one of the pipe is pending or closed *)
+  val connect : a:'msg t -> b:'msg t -> unit
+end
+
 type 'flags patch = 'flags Patch.t
-type 'flags pipe
+type 'msg pipe = 'msg Pipe.t
 type 'flags region
 type side = [ `local | `remote ]
 type 'flags observer =
   'flags region -> side -> 'flags patch ->
   (unit -> unit) option
-
-module Pipe :
-sig
-  type 'msg t = 'msg pipe
-
-  val make : change:('msg -> unit) -> 'msg t
-  val commit : 'msg t -> 'msg -> unit
-  val status : 'msg t -> [ `Pending | `Connected ]
-
-  (* Fails with Invalid_argument if one of the pipe is closed or connected *)
-  val connect : a:'msg t -> b:'msg t -> unit
-end
 
 module Region :
 sig
