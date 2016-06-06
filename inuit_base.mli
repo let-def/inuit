@@ -33,27 +33,5 @@ sig
 end
 
 type 'flags patch = 'flags Patch.t
+
 type 'msg socket = 'msg Socket.t
-type 'flags region
-type side = [ `Local | `Remote ]
-type 'flags observer =
-  'flags region -> side -> 'flags patch ->
-  (unit -> unit) option
-
-module Region :
-sig
-  type 'flags t = 'flags region
-
-  val append    : 'flags t -> 'flags list -> string -> unit
-  val clear     : 'flags t -> unit
-  val kill      : 'flags t -> unit
-  val sub       : ?observer:'flags observer -> 'flags t -> 'flags t
-  val is_closed : 'flags t -> bool
-
-  val unsafe_left_offset  : 'flags t -> int
-  val unsafe_right_offset : 'flags t -> int
-
-  val create : unit -> 'flags t * 'flags patch socket
-
-  val null : _ region
-end

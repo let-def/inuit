@@ -1,5 +1,5 @@
-open Inuit
-open Inuit.Cursor
+open Inuit_base
+open Inuit_cursor
 
 type 'a clickable = [> `Clickable | `Clicked ] as 'a
 type 'a editable = [> `Editable ] as 'a
@@ -209,7 +209,7 @@ struct
     text cursor "[";
     t.cursor <- observe (prepare_editable ~prompt:"|" cursor)
         (fun cursor' side p ->
-           let offset = Region.unsafe_left_offset (region cursor') in
+           let offset = Inuit_region.unsafe_left_offset (region cursor') in
            match Patch.utf8_offset t.state (p.Patch.offset - offset) with
            | exception Not_found -> None
            | offset ->

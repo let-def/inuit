@@ -1,4 +1,4 @@
-open Inuit
+open Inuit_cursor
 
 type 'a clickable = [> `Clickable | `Clicked ] as 'a
 type 'a editable = [> `Editable ] as 'a

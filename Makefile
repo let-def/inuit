@@ -1,6 +1,6 @@
 all: byte-code-library native-code-library
 
-MODULES = inuit_base inuit inuit_widget inuit_remote
+MODULES = inuit_base inuit_region inuit_cursor inuit_remote inuit_widget inuit
 SOURCES = $(foreach MOD,$(MODULES),$(MOD).mli $(MOD).ml)
 RESULT = inuit
 PACKS = grenier

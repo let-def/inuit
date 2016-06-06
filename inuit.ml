@@ -1,74 +1,11 @@
-include Inuit_base
+module Patch  = Inuit_base.Patch
+module Socket = Inuit_base.Socket
+module Region = Inuit_region
+module Cursor = Inuit_cursor
+module Remote = Inuit_remote
+module Widget = Inuit_widget
 
-type 'flags cursor = {
-  region : 'flags region;
-  flags : 'flags list;
-}
-
-module Cursor =
-struct
-  type 'flags clickable = [> `Clickable | `Clicked] as 'flags
-
-  let null = { region = Region.null; flags = [] }
-
-  let text t ?(flags=t.flags) text =
-    Region.append t.region flags text
-
-  let clear t =
-    Region.clear t.region
-
-  let kill t =
-    Region.kill t.region
-
-  let sub t = { region = Region.sub t.region; flags = t.flags }
-
-  let observe { region; flags } f =
-    let observer region =
-      let t' = { region; flags } in
-      fun side patch -> f t' side patch
-    in
-    { region = Region.sub ~observer region; flags }
-
-  let is_closed t = Region.is_closed t.region
-
-  let mem_flag flag cursor =
-    List.mem flag cursor.flags
-
-  let add_flag flag cursor =
-    if mem_flag flag cursor
-    then cursor
-    else {cursor with flags = flag :: cursor.flags}
-
-  let rem_flag flag cursor =
-    if mem_flag flag cursor
-    then {cursor with flags = List.filter ((<>) flag) cursor.flags}
-    else cursor
-
-  let get_flags t = t.flags
-
-  let with_flags flags t = { t with flags }
-
-  let region t = t.region
-
-  let clickable t f =
-    let t = add_flag `Clickable t in
-    observe t (
-      fun t' side patch ->
-        if List.mem `Clicked patch.Patch.flags then
-          Some (fun () -> f t')
-        else None
-    )
-
-  let printf t ?flags fmt =
-    Printf.ksprintf (text t ?flags) fmt
-
-  let link t ?flags fmt =
-    Printf.ksprintf (fun str f -> text (clickable t f) ?flags str) fmt
-
-  let cursor_of_region ?(flags=[]) region =
-    { region; flags = flags }
-
-  let make () =
-    let region, pipe = Region.create () in
-    cursor_of_region region, pipe
-end
+type 'a patch  = 'a Patch.t
+type 'a socket = 'a Socket.t
+type 'a region = 'a Region.t
+type 'a cursor = 'a Cursor.cursor

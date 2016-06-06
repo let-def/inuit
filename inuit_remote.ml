@@ -1,4 +1,4 @@
-open Inuit
+open Inuit_base
 
 type revision = {
   remote: int;
