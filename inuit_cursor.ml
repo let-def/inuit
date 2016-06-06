@@ -67,5 +67,5 @@ let cursor_of_region ?(flags=[]) region =
   { region; flags = flags }
 
 let make () =
-  let region, pipe = Inuit_region.create () in
+  let region, pipe = Inuit_region.make () in
   cursor_of_region region, pipe
