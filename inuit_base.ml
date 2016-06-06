@@ -40,13 +40,14 @@ end
 
 type 'flags patch = 'flags Patch.t
 
-module Pipe =
+module Socket =
 struct
+
   type 'msg t = {
     mutable receive      : 'msg -> unit;
-    mutable on_connected : 'msg t -> unit;
+    mutable on_connected : unit -> unit;
     mutable on_closed    : unit -> unit;
-    mutable status : 'msg status;
+    mutable status       : 'msg status;
   }
 
   and 'msg status =
@@ -54,32 +55,24 @@ struct
     | Connected of 'msg t
     | Closed
 
-  let ignore0 _ = ()
+  type 'a controller = 'a t
 
-  let setup () =
-    let result = {
-      receive = (fun _ -> invalid_arg "Inuit.Pipe.setup: pipe not initialized");
-      on_connected = ignore0;
-      on_closed = ignore0;
-      status = Pending
-    } in
-    result,
-    (fun ~on_connected ~on_closed ~receive ->
-       result.on_connected <- on_connected;
-       result.on_closed <- on_closed;
-       result.receive <- receive)
-
-  let make ?(on_connected=ignore) ?(on_closed=ignore) receive =
-    { receive; on_connected; on_closed; status = Pending }
+  let make ~receive =
+    {
+      receive      = receive;
+      on_connected = ignore;
+      on_closed    = ignore;
+      status       = Pending;
+    }
 
   let send t msg =
     match t.status with
     | Connected remote ->
       remote.receive msg
     | Pending ->
-      invalid_arg "Inuit.Pipe.send: sending data to unconnected pipe"
+      invalid_arg "Inuit.Socket.send: sending data to unconnected pipe"
     | Closed ->
-      invalid_arg "Inuit.Pipe.send: sending data to closed pipe"
+      invalid_arg "Inuit.Socket.send: sending data to closed pipe"
 
   let close t =
     match t.status with
@@ -87,47 +80,52 @@ struct
     | Pending ->
       t.status <- Closed;
       t.on_closed ();
-      t.on_connected <- ignore0;
-      t.receive <- ignore0;
-      t.on_closed <- ignore0;
+      t.on_connected <- ignore;
+      t.receive <- ignore;
+      t.on_closed <- ignore;
     | Connected remote ->
       t.status <- Closed;
       remote.status <- Closed;
       t.on_closed ();
       remote.on_closed ();
-      t.receive <- ignore0;
-      t.on_closed <- ignore0;
-      remote.receive <- ignore0;
-      remote.on_closed <- ignore0
+      t.receive <- ignore;
+      t.on_closed <- ignore;
+      remote.receive <- ignore;
+      remote.on_closed <- ignore
 
   let connect ~a ~b =
     match a.status, b.status with
     | Pending, Pending ->
       a.status <- Connected b;
       b.status <- Connected a;
-      a.on_connected a;
-      b.on_connected b;
-      a.on_connected <- ignore0;
-      b.on_connected <- ignore0;
+      a.on_connected ();
+      b.on_connected ();
+      a.on_connected <- ignore;
+      b.on_connected <- ignore
     | _ ->
       let to_str = function
         | Pending -> "pending"
         | Closed -> "already closed"
         | Connected _ -> "already connected"
       in
-      invalid_arg ("Inuit.Pipe.connect: pipe a is " ^ to_str a.status ^
+      invalid_arg ("Inuit.Socket.connect: pipe a is " ^ to_str a.status ^
                    "and pipe b is " ^ to_str b.status)
 
   let status t = match t.status with
-    | Pending -> `Pending
+    | Pending     -> `Pending
     | Connected _ -> `Connected
-    | Closed -> `Closed
+    | Closed      -> `Closed
 
+  let set_receive t f = t.receive <- f
+  let set_on_closed t f = t.on_closed <- f
+  let set_on_connected t f = t.on_connected <- f
+
+  let endpoint socket = socket
 end
 
-type 'msg pipe = 'msg Pipe.t
+type 'msg socket = 'msg Socket.t
 
-type side = [ `local | `remote ]
+type side = [ `Local | `Remote ]
 
 module Concrete_region =
 struct
@@ -148,7 +146,7 @@ struct
   and 'flags buffer = {
     mutable trope : 'flags t lazy_t Trope.t;
     mutable status : status;
-    mutable pipe_send : 'flags patch -> unit;
+    mutable socket : 'flags patch Socket.controller;
   }
 
   let unsafe_left_offset  t = Trope.position t.buffer.trope t.left
@@ -196,7 +194,7 @@ struct
   )
 
   let local_change buffer region patch = (
-    exec_observed (notify_observers buffer `local region ~stop_at:[] patch);
+    exec_observed (notify_observers buffer `Local region ~stop_at:[] patch);
   )
 
   let region_parent region =
@@ -295,7 +293,7 @@ struct
     let left_o = match left_region with
       | None -> []
       | Some region ->
-        notify_observers b `remote region ~stop_at:[] patch
+        notify_observers b `Remote region ~stop_at:[] patch
     and right_o = match right_region with
         | None -> []
         | Some right ->
@@ -303,7 +301,7 @@ struct
             | None -> []
             | Some region -> region.observers
           in
-          notify_observers b `remote right ~stop_at patch
+          notify_observers b `Remote right ~stop_at patch
     in
     (* Update trope *)
     let trope =
@@ -369,7 +367,7 @@ struct
     let observed = match left_region with
       | None -> []
       | Some region ->
-        notify_observers b `remote region ~stop_at:[] patch
+        notify_observers b `Remote region ~stop_at:[] patch
     in
     b.trope <- trope;
     exec_observed observed
@@ -395,12 +393,11 @@ struct
       let trope = buffer.trope in
       let offset = Trope.position trope t.right in
       let patch = Patch.make ~offset ~replace:0 flags text in
-      let observed = notify_observers buffer `local t ~stop_at:[] patch in
+      let observed = notify_observers buffer `Local t ~stop_at:[] patch in
       buffer.trope <- Trope.insert_before trope t.right patch.Patch.new_len;
-      buffer.pipe_send patch;
+      Socket.send buffer.socket patch;
       exec_observed observed;
     )
-
 
   let generic_clear f t =
     if is_open t then (
@@ -410,9 +407,9 @@ struct
       let offset = Trope.position trope t.left in
       let length = Trope.position trope t.right - offset in
       let patch = Patch.make ~offset ~replace:length [] "" in
-      let observed = notify_observers buffer `local t ~stop_at:[] patch in
+      let observed = notify_observers buffer `Local t ~stop_at:[] patch in
       buffer.trope <- f t buffer.trope;
-      buffer.pipe_send patch;
+      Socket.send buffer.socket patch;
       exec_observed observed;
     )
 
@@ -453,20 +450,20 @@ struct
     else t
 
   let create () =
+    let socket = Socket.make ~receive:ignore in
     let rec t' = lazy (
       let trope = Trope.create () in
       let trope, left  = Trope.put_cursor trope ~at:0 t' in
       let trope, right = Trope.put_after  trope left  t' in
-      let buffer = { trope; status = Ready; pipe_send = ignore } in
+      let buffer = { trope; status = Ready; socket } in
       { buffer; left; right; observers = []; parent = t'; closed = false }
     ) in
     let lazy t' = t' in
     let buffer = t'.buffer in
-    let on_closed () = buffer.trope <- Trope.clear buffer.trope in
-    let on_receive msg = remote_change buffer msg in
-    let pipe = Pipe.make ~on_closed on_receive in
-    t'.buffer.pipe_send <- Pipe.send pipe;
-    t', pipe
+    Socket.set_receive socket (remote_change buffer);
+    Socket.set_on_closed socket
+      (fun () -> buffer.trope <- Trope.clear buffer.trope);
+    (t', Socket.endpoint socket)
 end
 
 module Region =

@@ -13,31 +13,29 @@ sig
   val make : offset:int -> ?replace:int -> 'flags list -> string -> 'flags t
 end
 
-module Pipe :
+module Socket :
 sig
-  type 'msg t
+  type 'a controller
+  val make : receive:('a -> unit) -> 'a controller
 
-  val setup : unit ->
-    'msg t * (on_connected:('msg t -> unit) -> on_closed:(unit -> unit) ->
-              receive:('msg -> unit) -> unit)
+  val set_receive :  'a controller -> ('a -> unit) -> unit
+  val set_on_closed : 'a controller -> (unit -> unit) -> unit
+  val set_on_connected : 'a controller -> (unit -> unit) -> unit
 
-  val make :
-    ?on_connected:('msg t -> unit) ->
-    ?on_closed:(unit -> unit) ->
-    ('msg -> unit) -> 'msg t
-
-  val send : 'msg t -> 'msg -> unit
-  val close : 'msg t -> unit
-  val status : 'msg t -> [ `Pending | `Connected | `Closed ]
+  val send : 'msg controller -> 'msg -> unit
+  val close : 'msg controller -> unit
+  val status : 'msg controller -> [ `Pending | `Connected | `Closed ]
 
   (* Fails with Invalid_argument if one of the pipe is pending or closed *)
+  type 'a t
+  val endpoint : 'a controller -> 'a t
   val connect : a:'msg t -> b:'msg t -> unit
 end
 
 type 'flags patch = 'flags Patch.t
-type 'msg pipe = 'msg Pipe.t
+type 'msg socket = 'msg Socket.t
 type 'flags region
-type side = [ `local | `remote ]
+type side = [ `Local | `Remote ]
 type 'flags observer =
   'flags region -> side -> 'flags patch ->
   (unit -> unit) option
@@ -55,7 +53,7 @@ sig
   val unsafe_left_offset  : 'flags t -> int
   val unsafe_right_offset : 'flags t -> int
 
-  val create : unit -> 'flags t * 'flags patch pipe
+  val create : unit -> 'flags t * 'flags patch socket
 
   val null : _ region
 end

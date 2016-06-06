@@ -182,7 +182,7 @@ let prepare_editable ~prompt cursor = (
   let cursor = add_flag `Editable cursor in
   let rubber = observe cursor
       (fun cursor' side p ->
-         if side = `local then None
+         if side = `Local then None
          else Some (fun _ ->
              clear cursor';
              text cursor' prompt;
@@ -217,7 +217,7 @@ struct
              let offset = Patch.utf8_offset t.state ~offset p.Patch.old_len in
              let sr = String.sub t.state offset (String.length t.state - offset)  in
              t.state <- sl ^ p.Patch.text ^ sr;
-             if side = `remote then
+             if side = `Remote then
                on_change
              else None
         );
@@ -264,7 +264,7 @@ struct
             | None -> Some (fun _ -> render t)
             | Some f -> Some (fun _ -> render t; f t)
          in fun cursor' side p ->
-           if side = `remote then (
+           if side = `Remote then (
              let delta =
                p.Patch.new_len
                - p.Patch.old_len
