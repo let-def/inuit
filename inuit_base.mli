@@ -48,6 +48,9 @@ sig
   (** Produces a patch, ensuring that [new_len = utf8_length text].
       TODO: validate utf-8 string. *)
   val make : offset:int -> ?replace:int -> 'flags list -> string -> 'flags t
+
+  (** Replace the flags in a patch by a new list *)
+  val with_flags : 'flags list -> 'flags t -> 'flags t
 end
 
 module Socket :

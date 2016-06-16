@@ -36,6 +36,9 @@ struct
     text    = text;
     flags   = flags;
   }
+
+  let with_flags flags t =
+    if t.flags == flags then t else {t with flags}
 end
 
 type 'flags patch = 'flags Patch.t
