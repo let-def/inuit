@@ -2,6 +2,10 @@ open Inuit_base
 
 type side = [ `Local | `Remote ]
 
+let cons_some x xs = match x with
+  | None -> xs
+  | Some x -> x :: xs
+
 module Concrete =
 struct
 
@@ -14,7 +18,7 @@ struct
     left   : 'flags t lazy_t Trope.cursor;
     right  : 'flags t lazy_t Trope.cursor;
     parent : 'flags t lazy_t;
-    observers : (side -> 'flags patch -> (unit -> unit) option) lazy_t list;
+    observers : (side -> 'flags patch -> 'flags list * (unit -> unit) option) lazy_t list;
     mutable closed : bool;
   }
 
@@ -35,19 +39,18 @@ struct
 
   let notify_observers buffer side region ~stop_at patch = (
     assert (buffer.status = Ready);
-    let rec aux acc = function
+    let rec aux patch acc = function
       | [] -> acc
       | fs when fs == stop_at -> acc
       | lazy f :: fs ->
-        let acc = match f side patch with
-          | None -> acc
-          | Some f' -> f' :: acc
-        in
-        aux acc fs
+        let flags, f' = f side patch in
+        let patch = Patch.with_flags flags patch in
+        let acc = cons_some f' acc in
+        aux patch acc fs
     in
     buffer.status <- Locked;
     let fs =
-      try aux [] region.observers
+      try aux patch [] region.observers
       with exn ->
         buffer.status <- Ready;
         raise exn
@@ -386,4 +389,4 @@ let make () =
 let null = Null
 
 type 'flags observer =
-  'flags t -> side -> 'flags patch -> (unit -> unit) option
+  'flags t -> side -> 'flags patch -> 'flags list * (unit -> unit) option

@@ -182,11 +182,15 @@ let prepare_editable ~prompt cursor = (
   let cursor = add_flag `Editable cursor in
   let rubber = observe cursor
       (fun cursor' side p ->
-         if side = `Local then None
-         else Some (fun _ ->
-             clear cursor';
-             text cursor' prompt;
-           )
+         let {Patch. flags} = p in
+         (flags,
+          if side = `Local then
+            None
+          else
+            Some (fun _ ->
+                clear cursor';
+                text cursor' prompt;
+              ))
       )
   in
   text rubber prompt;
@@ -210,8 +214,10 @@ struct
     t.cursor <- observe (prepare_editable ~prompt:"|" cursor)
         (fun cursor' side p ->
            let offset = Inuit_region.unsafe_left_offset (region cursor') in
+           p.Patch.flags,
            match Patch.utf8_offset t.state (p.Patch.offset - offset) with
-           | exception Not_found -> None
+           | exception Not_found ->
+             None
            | offset ->
              let sl = String.sub t.state 0 offset in
              let offset = Patch.utf8_offset t.state ~offset p.Patch.old_len in
@@ -264,6 +270,7 @@ struct
             | None -> Some (fun _ -> render t)
             | Some f -> Some (fun _ -> render t; f t)
          in fun cursor' side p ->
+           p.Patch.flags,
            if side = `Remote then (
              let delta =
                p.Patch.new_len

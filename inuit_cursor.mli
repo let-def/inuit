@@ -37,7 +37,8 @@ val sub     : 'flags cursor -> 'flags cursor
     See [Inuit_region.observer] and [Inuit_region.observe] for more
     information. *)
 val observe : 'flags cursor ->
-  ('flags cursor -> [`Local | `Remote] -> 'flags patch -> (unit -> unit) option) -> 'flags cursor
+  ('flags cursor -> [`Local | `Remote] -> 'flags patch ->
+   'flags list * (unit -> unit) option) -> 'flags cursor
 
 (** A cursor is closed if it has no observers, all changes will be ignored.
     This can happen when using [kill], or [clear] on a parent cursor, and when

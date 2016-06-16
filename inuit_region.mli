@@ -48,7 +48,7 @@ val kill      : 'flags t -> unit
     itself. *)
 type 'flags observer =
   'flags t -> side -> 'flags Patch.t ->
-  (unit -> unit) option
+  'flags list * (unit -> unit) option
 
 (** [`Local] changes are the one made through the [Inuit_region] and
     [Inuit_cursor] API.

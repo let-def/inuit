@@ -52,9 +52,11 @@ let clickable t f =
   let t = add_flag `Clickable t in
   observe t (
     fun t' side patch ->
-      if List.mem `Clicked patch.Patch.flags then
-        Some (fun () -> f t')
-      else None
+      let {Patch. flags} =  patch in
+      if List.mem `Clicked flags then
+        (List.filter ((<>) `Clicked) flags, Some (fun () -> f t'))
+      else
+        (flags, None)
   )
 
 let printf t ?flags fmt =
