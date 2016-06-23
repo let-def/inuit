@@ -30,13 +30,23 @@ type 'flag state = {
 
 let current_revision t = { remote = t.remote_local; local = t.local_local }
 
+let old_len p = match p.Patch.operation with
+  | Patch.Remove n | Patch.Replace (n,_) -> n
+  | _ -> 0
+
+let new_len p = match p.Patch.operation with
+  | Patch.Insert _ | Patch.Replace _ -> p.Patch.text_len
+  | _ -> 0
+
 let remote_lift_patch t p =
   let open Patch in
   t.local_local <- t.local_local + 1;
-  if p.old_len <> 0 then
-    t.revisions <- (t.local_local, R (p.offset, p.old_len)) :: t.revisions;
-  if p.new_len <> 0 then
-    t.revisions <- (t.local_local, I (p.offset, p.new_len)) :: t.revisions;
+  let old_len = old_len p in
+  let new_len = new_len p in
+  if old_len <> 0 then
+    t.revisions <- (t.local_local, R (p.offset, old_len)) :: t.revisions;
+  if new_len <> 0 then
+    t.revisions <- (t.local_local, I (p.offset, new_len)) :: t.revisions;
   Patch (current_revision t, p)
 
 let local_to_remote t patch =
@@ -90,14 +100,17 @@ let commute_remove (_,op') (s2, l2) = match op' with
     else
       (s2, l2 + l1)
 
-let commute_point (_,op') s2 = match op' with
+let commute_point lean (_,op') s2 = match op' with
   | R (s1, l1) ->
     if s2 < s1 then
       s2
     else if s2 >= s1 + l1 then
       (s2 - l1)
-    else
-      raise Not_found
+    else (match lean with
+      | `Left -> s1
+      | `None -> raise Not_found
+      | `Right -> s1 + l1
+      )
   | I (s1, l1) ->
     if s1 <= s2 then
       (s2 + l1)
@@ -112,18 +125,30 @@ let commute_remote_op t op_kind op_arg =
 
 let remote_to_local t = function
   | Ack revision -> update_remote_revision t revision
-  | Patch (revision, {Patch. offset; old_len; flags; text} ) ->
+  | Patch (revision, p) ->
     update_remote_revision t revision;
+    let o = p.Patch.offset in
     begin match
-        if old_len <> 0 then
-          commute_remote_op t.version commute_remove (offset, old_len)
-        else
-          commute_remote_op t.version commute_point offset, 0
+      match p.Patch.operation with
+      | Patch.Insert text ->
+          let o = commute_remote_op t.version (commute_point `None) o in
+          (o, Patch.Insert text)
+      | Patch.Propertize n ->
+          let l = commute_remote_op t.version (commute_point `Right) o in
+          let r = commute_remote_op t.version (commute_point `Left) (o+n) in
+          let n' = r - l in
+          if n' < 0 then raise Not_found;
+          (l, Patch.Propertize n')
+      | Patch.Remove n ->
+          let o, n' = commute_remote_op t.version commute_remove (o, n) in
+          (o, Patch.Remove n')
+      | Patch.Replace (n, text) ->
+          let o, n' = commute_remote_op t.version commute_remove (o, n) in
+          (o, Patch.Replace (n', text))
       with
       | exception Not_found -> ()
-      | (offset, replace) ->
-        Socket.send t.local_socket
-          (Patch.make ~offset ~replace flags text)
+      | (offset, op) ->
+          Socket.send t.local_socket (Patch.make ~offset p.Patch.flags op)
     end
 
 let make () =

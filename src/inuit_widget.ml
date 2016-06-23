@@ -213,19 +213,21 @@ struct
     text cursor "[";
     t.cursor <- observe (prepare_editable ~prompt:"|" cursor)
         (fun cursor' side p ->
-           let offset = Inuit_region.unsafe_left_offset (region cursor') in
-           p.Patch.flags,
-           match Patch.utf8_offset t.state (p.Patch.offset - offset) with
-           | exception Not_found ->
-             None
-           | offset ->
-             let sl = String.sub t.state 0 offset in
-             let offset = Patch.utf8_offset t.state ~offset p.Patch.old_len in
-             let sr = String.sub t.state offset (String.length t.state - offset)  in
-             t.state <- sl ^ p.Patch.text ^ sr;
-             if side = `Remote then
-               on_change
-             else None
+           let callback =
+             let offset = Inuit_region.unsafe_left_offset (region cursor') in
+             match Patch.utf8_offset t.state (p.Patch.offset - offset) with
+             | exception Not_found ->
+                 None
+             | offset ->
+                 let sl = String.sub t.state 0 offset in
+                 let offset = Patch.utf8_offset t.state ~offset (Patch.removed p) in
+                 let sr = String.sub t.state offset (String.length t.state - offset)  in
+                 t.state <- sl ^ Patch.inserted_text p ^ sr;
+                 if side = `Remote then
+                   on_change
+                 else None
+           in
+           (p.Patch.flags, callback)
         );
     text t.cursor state;
     text cursor "|]";
@@ -272,11 +274,8 @@ struct
          in fun cursor' side p ->
            p.Patch.flags,
            if side = `Remote then (
-             let delta =
-               p.Patch.new_len
-               - p.Patch.old_len
-               - count_chars p.Patch.text '-' * 2
-             in
+             let delta = Patch.inserted p - Patch.removed p
+                         - count_chars (Patch.inserted_text p) '-' * 2 in
              let pos, max = t.state in
              let pos = pos + delta in
              let pos = if pos < 0 then 0 else if pos > max then max else pos in

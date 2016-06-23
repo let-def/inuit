@@ -152,11 +152,11 @@ struct
     aux l r
   )
 
-  let remote_replace b patch = (
+  let remote_replace b ({Patch.offset; _} as patch) old_len new_len = (
     let trope = b.trope in
-    let {Patch. old_len; new_len; offset; _} = patch in
     (* Find bounds *)
-    let left_offset, left_cursor = insertion_cursor ~left_leaning:true trope offset in
+    let left_offset, left_cursor =
+      insertion_cursor ~left_leaning:true trope offset in
     let right_bound = replacement_bound trope (offset + old_len) in
     (* Find affected regions and ancestor *)
     let left_region =
@@ -173,13 +173,13 @@ struct
       | Some region ->
         notify_observers b `Remote region ~stop_at:[] patch
     and right_o = match right_region with
-      | None -> []
-      | Some right ->
-        let stop_at = match ancestor with
-          | None -> []
-          | Some region -> region.observers
-        in
-        notify_observers b `Remote right ~stop_at patch
+        | None -> []
+        | Some right ->
+          let stop_at = match ancestor with
+            | None -> []
+            | Some region -> region.observers
+          in
+          notify_observers b `Remote right ~stop_at patch
     in
     (* Update trope *)
     let trope =
@@ -228,12 +228,43 @@ struct
     exec_observed left_o;
   )
 
-  let remote_insert b patch = (
-    let {Patch. new_len; offset; _} = patch in
+  let remote_propertize b ({Patch.offset; _} as patch) len = (
     let trope = b.trope in
-    let left_leaning = new_len > 0 in
+    (* Find bounds *)
     let left_offset, left_cursor =
-      insertion_cursor ~left_leaning trope offset in
+      insertion_cursor ~left_leaning:false trope offset in
+    let right_bound = replacement_bound trope (offset + len) in
+    (* Find affected regions and ancestor *)
+    let left_region =
+      match left_cursor with None -> None | Some c -> region_after c in
+    let right_region =
+      match right_bound with None -> None | Some (_,c) -> region_before c in
+    let ancestor = match left_region, right_region with
+      | None, _ | _, None -> None
+      | Some l, Some r -> ancestor_region l r
+    in
+    (* Notify observers *)
+    let left_o = match left_region with
+      | None -> []
+      | Some region ->
+        notify_observers b `Remote region ~stop_at:[] patch
+    and right_o = match right_region with
+        | None -> []
+        | Some right ->
+          let stop_at = match ancestor with
+            | None -> []
+            | Some region -> region.observers
+          in
+          notify_observers b `Remote right ~stop_at patch
+    in
+    exec_observed right_o;
+    exec_observed left_o;
+  )
+
+  let remote_insert b ({Patch.offset; _} as patch) new_len = (
+    let trope = b.trope in
+    let left_offset, left_cursor =
+      insertion_cursor ~left_leaning:false trope offset in
     let left_region = match left_cursor with
       | None -> None
       | Some cursor -> region_after cursor
@@ -258,10 +289,12 @@ struct
                    attempt to change locked buffer \
                    (buffer under observation)"
     | Ready ->
-      if patch.Patch.old_len = 0 then
-        remote_insert b patch
-      else
-        remote_replace b patch
+        let {Patch. operation; offset; text_len} = patch in
+        match operation with
+        | Patch.Remove n -> remote_replace b patch n 0
+        | Patch.Replace (n,_) -> remote_replace b patch n text_len
+        | Patch.Insert _ -> remote_insert b patch text_len
+        | Patch.Propertize n -> remote_propertize b patch n
   )
 
   let append t flags text =
@@ -270,9 +303,9 @@ struct
       check_local_change "append" buffer;
       let trope = buffer.trope in
       let offset = Trope.position trope t.right in
-      let patch = Patch.make ~offset ~replace:0 flags text in
+      let patch = Patch.make ~offset flags (Patch.Insert text) in
       let observed = notify_observers buffer `Local t ~stop_at:[] patch in
-      buffer.trope <- Trope.insert_before trope t.right patch.Patch.new_len;
+      buffer.trope <- Trope.insert_before trope t.right patch.Patch.text_len;
       Socket.send buffer.socket patch;
       exec_observed observed;
     )
@@ -284,7 +317,7 @@ struct
       let trope = buffer.trope in
       let offset = Trope.position trope t.left in
       let length = Trope.position trope t.right - offset in
-      let patch = Patch.make ~offset ~replace:length [] "" in
+      let patch = Patch.make ~offset [] (Patch.Remove length) in
       let observed = notify_observers buffer `Local t ~stop_at:[] patch in
       buffer.trope <- f t buffer.trope;
       Socket.send buffer.socket patch;

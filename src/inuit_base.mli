@@ -15,14 +15,19 @@
 module Patch :
 sig
 
+  type operation =
+    | Remove  of int
+    | Insert  of string
+    | Replace of int * string
+    | Propertize of int
+
   (** A [flags Patch.t] represents the replacement of a piece of text by
       another, possibly annotated by values of type [flags]. *)
   type 'flags t = private
-    { offset  : int         (** Starting at [offset]'th unicode sequence *)
-    ; old_len : int         (** replace [old_len] unicode sequences      *)
-    ; new_len : int         (** by the [new_len] ones                    *)
-    ; text    : string      (** stored in [text].                        *)
-    ; flags   : 'flags list (** A list of backend defined [flags].       *)
+    { offset    : int         (** Starting at [offset]'th unicode sequence *)
+    ; operation : operation
+    ; text_len  : int
+    ; flags     : 'flags list (** A list of backend defined [flags].       *)
     }
 
   (** [utf8_length str] is the number of unicode sequences in [str].
@@ -47,10 +52,14 @@ sig
 
   (** Produces a patch, ensuring that [new_len = utf8_length text].
       TODO: validate utf-8 string. *)
-  val make : offset:int -> ?replace:int -> 'flags list -> string -> 'flags t
+  val make : offset:int -> 'flags list -> operation -> 'flags t
 
   (** Replace the flags in a patch by a new list *)
   val with_flags : 'flags list -> 'flags t -> 'flags t
+
+  val removed : _ t -> int
+  val inserted : _ t -> int
+  val inserted_text : _ t -> string
 end
 
 module Socket :
