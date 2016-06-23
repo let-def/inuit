@@ -1,17 +1,19 @@
 opam-version: "1.2"
-name: "inuit"
-version: "0.1"
-maintainer: "Frederic Bour <frederic.bour@lakaban.net>"
-authors: "Frederic Bour <frederic.bour@lakaban.net>"
-homepage: "https://github.com/def-lkb/inuit"
-bug-reports: "https://github.com/def-lkb/inuit"
-license: "MIT"
-dev-repo: "https://github.com/def-lkb/inuit.git"
-build: [
-  [make]
-]
-install: [make "install"]
-remove: ["ocamlfind" "remove" "inuit"]
+maintainer: "Frédéric Bour <frederic.bour@lakaban.net>"
+authors: ["Frédéric Bour <frederic.bour@lakaban.net>"]
+homepage: "https://github.com/let-def/inuit"
+doc: "https://let-def.github.io/inuit/doc"
+license: "ISC"
+dev-repo: "https://github.com/let-def/inuit.git"
+bug-reports: "https://github.com/let-def/inuit/issues"
+tags: []
+available: [ ocaml-version >= "4.01.0"]
 depends: [
   "ocamlfind" {build}
+  "ocamlbuild" {build}
+  "topkg" {build}
 ]
+depopts: []
+build:
+[[ "ocaml" "pkg/pkg.ml" "build"
+           "--pinned" "%{pinned}%" ]]

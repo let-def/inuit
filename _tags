@@ -1,0 +1,4 @@
+true : bin_annot, safe_string, package(bytes), package(grenier.trope)
+
+<src> : include
+<test> : include

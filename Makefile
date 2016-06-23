@@ -1,24 +1,10 @@
-all: byte-code-library native-code-library
+TARGETS = default clean lib-native doc tests
+all: default
 
-MODULES = inuit_base inuit_region inuit_cursor inuit_remote inuit_widget inuit
-SOURCES = $(foreach MOD,$(MODULES),$(MOD).mli $(MOD).ml)
-RESULT = inuit
-PACKS = grenier
+.PHONY: all $(TARGETS)
 
-OCAMLMAKEFILE=OCamlMakefile
--include $(OCAMLMAKEFILE)
+$(TARGETS):
+	sh build $@
 
-install: libinstall
-
-uninstall: libuninstall
-
-reinstall:
-	-$(MAKE) uninstall
-	$(MAKE) install
-
-LIBINSTALL_FILES = \
-  $(foreach MOD,$(MODULES),$(MOD).mli $(MOD).cmi $(MOD).cmx) \
-	inuit.cma  inuit.a  inuit.cmxa
-
-OCAMLFLAGS += -g
-OCAMLLDFLAGS += -g
+%:
+	sh build $@
