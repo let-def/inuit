@@ -264,7 +264,7 @@ struct
   let remote_insert b ({Patch.offset; _} as patch) new_len = (
     let trope = b.trope in
     let left_offset, left_cursor =
-      insertion_cursor ~left_leaning:false trope offset in
+      insertion_cursor ~left_leaning:true trope offset in
     let left_region = match left_cursor with
       | None -> None
       | Some cursor -> region_after cursor

@@ -210,27 +210,30 @@ struct
       | None -> None
       | Some f -> Some (fun _ -> f t)
     in
-    text cursor "[";
-    t.cursor <- observe (prepare_editable ~prompt:"|" cursor)
+    let prompt = prepare_editable ~prompt:"$ " cursor in
+    t.cursor <- observe prompt
         (fun cursor' side p ->
            let callback =
              let offset = Inuit_region.unsafe_left_offset (region cursor') in
              match Patch.utf8_offset t.state (p.Patch.offset - offset) with
              | exception Not_found ->
-                 None
+               None
              | offset ->
-                 let sl = String.sub t.state 0 offset in
-                 let offset = Patch.utf8_offset t.state ~offset (Patch.removed p) in
-                 let sr = String.sub t.state offset (String.length t.state - offset)  in
-                 t.state <- sl ^ Patch.inserted_text p ^ sr;
-                 if side = `Remote then
-                   on_change
-                 else None
+               let sl = String.sub t.state 0 offset in
+               let sr =
+                 match Patch.utf8_offset t.state ~offset (Patch.removed p) with
+                 | exception Not_found -> ""
+                 | offset ->
+                   String.sub t.state offset (String.length t.state - offset)
+               in
+               t.state <- sl ^ Patch.inserted_text p ^ sr;
+               if side = `Remote then
+                 on_change
+               else None
            in
            (p.Patch.flags, callback)
         );
     text t.cursor state;
-    text cursor "|]";
   )
 
   let change t ~state =
