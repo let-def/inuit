@@ -2,7 +2,7 @@ open Inuit_base
 open Inuit_cursor
 
 type 'a clickable = [> `Clickable | `Clicked ] as 'a
-type 'a editable = [> `Editable ] as 'a
+type 'a editable = [> `Editable | `Prompt ] as 'a
 
 module Nav =
 struct
@@ -178,25 +178,6 @@ struct
   let state t = t.state
 end
 
-let prepare_editable ~prompt cursor = (
-  let cursor = add_flag `Editable cursor in
-  let rubber = observe cursor
-      (fun cursor' side p ->
-         let {Patch. flags} = p in
-         (flags,
-          if side = `Local then
-            None
-          else
-            Some (fun _ ->
-                clear cursor';
-                text cursor' prompt;
-              ))
-      )
-  in
-  text rubber prompt;
-  cursor
-)
-
 module Edit =
 struct
   type 'flags t = {
@@ -210,8 +191,8 @@ struct
       | None -> None
       | Some f -> Some (fun _ -> f t)
     in
-    let prompt = prepare_editable ~prompt:"$ " cursor in
-    t.cursor <- observe prompt
+    text (add_flag `Prompt cursor) "# ";
+    t.cursor <- observe cursor
         (fun cursor' side p ->
            let callback =
              let offset = Inuit_region.unsafe_left_offset (region cursor') in
@@ -245,6 +226,25 @@ end
 
 module Slider =
 struct
+  let prepare_editable ~prompt cursor = (
+    let cursor = add_flag `Editable cursor in
+    let rubber = observe cursor
+        (fun cursor' side p ->
+           let {Patch. flags} = p in
+           (flags,
+            if side = `Local then
+              None
+            else
+              Some (fun _ ->
+                  clear cursor';
+                  text cursor' prompt;
+                ))
+        )
+    in
+    text rubber prompt;
+    cursor
+  )
+
   type 'flags t = {
     mutable cursor : 'flags cursor;
     mutable state : (int * int);
