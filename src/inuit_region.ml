@@ -338,11 +338,15 @@ struct
          trope)
       t
 
-  let sub ?observer t =
+  let sub ?(at=`Right) ?observer t =
     if is_open t then
       let rec t' = lazy (
         let trope = t.buffer.trope in
-        let trope, left  = Trope.put_before trope t.right t' in
+        let trope, left =
+          match at with
+          | `Left -> Trope.put_after trope t.left t'
+          | `Right -> Trope.put_before trope t.right t'
+        in
         let trope, right = Trope.put_after  trope left t' in
         t.buffer.trope <- trope;
         let observers = match observer with
@@ -394,14 +398,14 @@ let kill = function
   | Null -> ()
   | Concrete t -> Concrete.kill t
 
-let sub ?observer = function
+let sub ?at ?observer = function
   | Null -> Null
   | Concrete t ->
     let observer = match observer with
       | None -> None
       | Some f -> Some (fun region -> f (Concrete region))
     in
-    Concrete (Concrete.sub ?observer t)
+    Concrete (Concrete.sub ?at ?observer t)
 
 let is_closed = function
   | Null -> true

@@ -60,7 +60,8 @@ and side = [ `Local | `Remote ]
     The effect of this function is to turn
          [... region1 ... text ...]
     into [... region1 ... text ...[region2]], where [region2] is empty. *)
-val sub : ?observer:'flags observer -> 'flags t -> 'flags t
+val sub : ?at:[`Left | `Right] ->
+  ?observer:'flags observer -> 'flags t -> 'flags t
 
 (** A region is closed if it no longer has any listener, such that changes
     applied to it will never be observed again.
