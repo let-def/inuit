@@ -68,6 +68,18 @@ val get_flags : 'flags cursor -> 'flags list
 (** Replace the set of flags with a new one. *)
 val with_flags : 'flags list -> 'flags cursor -> 'flags cursor
 
+(** {1 Manipulating indentation} *)
+
+(** Get indentation level of cursor *)
+val get_indent : 'flags cursor -> int
+
+(** Set indentation level of cursor *)
+val with_indent : 'flags cursor -> int -> 'flags cursor
+
+(** Add the argument to indentation level, clamp negative values to 0.
+    [shift_ident t n = with_indent t (max 0 (get_indent t + n))] *)
+val shift_indent : 'flags cursor -> int -> 'flags cursor
+
 (** {1 Creating content (convenience functions)} *)
 
 (** Create a sub-cursor that can be clicked.
@@ -87,7 +99,8 @@ val link : 'flags clickable cursor -> ?flags:'flags list ->
   ('a, unit, string, ('flags cursor -> unit) -> unit) format4 -> 'a
 
 (** Make a cursor from a region. *)
-val cursor_of_region : ?flags:'flags list -> 'flags  Inuit_region.t -> 'flags cursor
+val cursor_of_region : ?flags:'flags list -> ?indent:int ->
+  'flags  Inuit_region.t -> 'flags cursor
 
 (** [Inuit_region.make] wrapper: return a root cursor and a pending socket.
     Socket must be connected prior to changing the cursor. *)

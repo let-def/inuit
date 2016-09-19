@@ -2,15 +2,40 @@ open Inuit_base
 
 type 'flags cursor = {
   region : 'flags Inuit_region.t;
-  flags : 'flags list;
+  flags  : 'flags list;
+  indent : int;
 }
 
 type 'flags clickable = [> `Clickable | `Clicked] as 'flags
 
-let null = { region = Inuit_region.null; flags = [] }
+let null = { region = Inuit_region.null; flags = []; indent = 0 }
+
+let count_char str chr =
+  let count = ref 0 in
+  for i = 0 to String.length str - 1 do
+    if str.[i] = chr then incr count;
+  done;
+  !count
+
+let indent_text col text =
+  if col <= 0 then text else
+    let count = count_char text '\n' in
+    if count = 0 then text else
+      let buf = Bytes.make (String.length text + col * count) ' ' in
+      let rec fill src dst =
+        match String.index_from text src '\n' with
+        | exception Not_found ->
+          Bytes.blit_string text src buf dst (String.length text - src)
+        | src' ->
+          let len = src' - src + 1 in
+          Bytes.blit_string text src buf dst len;
+          fill (src' + 1) (dst + len + col)
+      in
+      fill 0 0;
+      Bytes.unsafe_to_string buf
 
 let text t ?(flags=t.flags) text =
-  Inuit_region.append t.region flags text
+  Inuit_region.append t.region flags (indent_text t.indent text)
 
 let clear t =
   Inuit_region.clear t.region
@@ -18,14 +43,14 @@ let clear t =
 let kill t =
   Inuit_region.kill t.region
 
-let sub t = { region = Inuit_region.sub t.region; flags = t.flags }
+let sub t = { t with region = Inuit_region.sub t.region }
 
-let observe { region; flags } f =
+let observe { region; flags; indent } f =
   let observer region =
-    let t' = { region; flags } in
+    let t' = { region; flags; indent } in
     fun side patch -> f t' side patch
   in
-  { region = Inuit_region.sub ~observer region; flags }
+  { region = Inuit_region.sub ~observer region; flags; indent }
 
 let is_closed t = Inuit_region.is_closed t.region
 
@@ -65,9 +90,15 @@ let printf t ?flags fmt =
 let link t ?flags fmt =
   Printf.ksprintf (fun str f -> text (clickable t f) ?flags str) fmt
 
-let cursor_of_region ?(flags=[]) region =
-  { region; flags = flags }
+let cursor_of_region ?(flags=[]) ?(indent=0) region =
+  { region; flags = flags; indent }
 
 let make () =
   let region, pipe = Inuit_region.make () in
   cursor_of_region region, pipe
+
+let get_indent t = t.indent
+
+let with_indent t indent = {t with indent}
+
+let shift_indent t indent = {t with indent = max 0 (t.indent + indent) }
