@@ -58,13 +58,23 @@ type 'flags observer =
     [`Remote] changes are the one received through the socket. *)
 and side = [ `Local | `Remote ]
 
+(** Anchor are abstract positions which are not aware of the text content.
+    They are useful to point positions relative to regions:
+    "before this region, after that ...".
+    FIXME: Find better explanation, or concept, or cleanup.
+*)
+type anchor = Order_managed.t
+
 (** Create a sub-region at the right end of the region.
     The new region is an empty.
     The effect of this function is to turn
          [... region1 ... text ...]
     into [... region1 ... text ...[region2]], where [region2] is empty. *)
-val sub : ?at:[`Left | `Right] ->
+val sub : ?at:[`Left | `Right | `Anchor of anchor] ->
   ?observer:'flags observer -> 'flags t -> 'flags t
+
+(** Create an anchor at the boundary of a region. *)
+val anchor : ?at:[`Left | `Right] -> 'flags t -> anchor
 
 (** A region is closed if it no longer has any listener, such that changes
     applied to it will never be observed again.
