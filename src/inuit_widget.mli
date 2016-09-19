@@ -21,7 +21,7 @@ module Nav : sig
 end
 
 module Tree : sig
-  type 'flags t
+  type 'flags t = 'flags cursor
 
   val make  : 'flags cursor -> 'flags t
   val add   : ?children:('flags t -> unit) ->

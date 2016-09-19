@@ -84,45 +84,42 @@ end
 
 module Tree =
 struct
-  type 'flags t = {
-    cursor: 'flags cursor;
-  }
+  type 'flags t = 'flags cursor
 
   let not_closed t =
-    not (is_closed t.cursor)
+    not (is_closed t)
 
-  let make cursor =
-    { cursor = sub cursor }
+  let make cursor = sub cursor
 
   let add_leaf ?action t =
     let result = match action with
-      | Some action -> clickable t.cursor action
-      | None -> sub t.cursor
+      | Some action -> clickable t action
+      | None -> sub t
     in
-    text t.cursor "\n";
+    text t "\n";
     result
 
   let add_node children ?action ?(opened=ref false) t =
     let body = ref None in
-    text t.cursor "\n";
-    link t.cursor (if !opened then "▪" else "▫") (fun c ->
+    text t "\n";
+    link t (if !opened then "▪" else "▫") (fun c ->
         match !body with
         | None -> ()
         | Some t' when !opened ->
           opened := false;
           clear c; text c "▫";
-          clear t'.cursor
+          clear t'
         | Some t' ->
           opened := true;
           clear c; text c "▪";
           children t'
       );
-    text t.cursor " ";
+    text t " ";
     let result = match action with
-      | None -> sub t.cursor
-      | Some action -> clickable t.cursor action
+      | None -> sub t
+      | Some action -> clickable t action
     in
-    let t' = { cursor = shift_indent (sub t.cursor) (+2) } in
+    let t' = shift_indent (sub t) (+2) in
     body := Some t';
     if !opened then children t';
     result
@@ -133,9 +130,9 @@ struct
       | None -> add_leaf ?action t
       | Some children -> add_node children ?action ?opened t
     ) else
-      t.cursor
+      t
 
-  let clear t = clear t.cursor
+  let clear t = clear t
 end
 
 module Check =
