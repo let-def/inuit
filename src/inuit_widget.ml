@@ -85,7 +85,6 @@ end
 module Tree =
 struct
   type 'flags t = {
-    indent: int;
     cursor: 'flags cursor;
   }
 
@@ -93,15 +92,9 @@ struct
     not (is_closed t.cursor)
 
   let make cursor =
-    { indent = 0; cursor = sub cursor }
-
-  let indent t =
-    if t.indent > 0 then
-      text t.cursor (String.make t.indent ' ')
+    { cursor = sub cursor }
 
   let add_leaf ?action t =
-    indent t;
-    (*text t.cursor "  ";*)
     let result = match action with
       | Some action -> clickable t.cursor action
       | None -> sub t.cursor
@@ -110,8 +103,8 @@ struct
     result
 
   let add_node children ?action ?(opened=ref false) t =
-    indent t;
     let body = ref None in
+    text t.cursor "\n";
     link t.cursor (if !opened then "▪" else "▫") (fun c ->
         match !body with
         | None -> ()
@@ -129,8 +122,7 @@ struct
       | None -> sub t.cursor
       | Some action -> clickable t.cursor action
     in
-    text t.cursor "\n";
-    let t' = { indent = t.indent + 1; cursor = sub t.cursor } in
+    let t' = { cursor = shift_indent (sub t.cursor) (+2) } in
     body := Some t';
     if !opened then children t';
     result
