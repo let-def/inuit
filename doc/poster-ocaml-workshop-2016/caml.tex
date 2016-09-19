@@ -1,0 +1,92 @@
+\usepackage{xcolor}
+%\definecolor{butter}{HTML}{FCE94F}
+%\definecolor{butter}{HTML}{EDD400}
+\definecolor{butter}{HTML}{C4A000}
+%\definecolor{orange}{HTML}{FCAF3E}
+%\definecolor{orange}{HTML}{F57900}
+\definecolor{orange}{HTML}{CE5C00}
+%\definecolor{chocolate}{HTML}{E9B96E}
+%\definecolor{chocolate}{HTML}{C17D11}
+\definecolor{chocolate}{HTML}{8F5902}
+%\definecolor{chameleon}{HTML}{8AE234}
+%\definecolor{chameleon}{HTML}{73D216}
+\definecolor{chameleon}{HTML}{4E9A06}
+%\definecolor{skyblue}{HTML}{729FCF}
+%\definecolor{skyblue}{HTML}{3465A4}
+\definecolor{skyblue}{HTML}{204A87}
+%\definecolor{plum}{HTML}{AD7FA8}
+%\definecolor{plum}{HTML}{75507B}
+\definecolor{plum}{HTML}{5C3566}
+%\definecolor{scarletred}{HTML}{EF2929}
+%\definecolor{scarletred}{HTML}{CC0000}
+\definecolor{scarletred}{HTML}{A40000}
+%\definecolor{lightalu}{HTML}{EEEEEC}
+%\definecolor{lightalu}{HTML}{D3D7CF}
+\definecolor{lightalu}{HTML}{BABDB6}
+%\definecolor{darkalu}{HTML}{888A85}
+%\definecolor{darkalu}{HTML}{555753}
+\definecolor{darkalu}{HTML}{2E3436}
+
+\newcommand{\kwstyle}{}
+
+\usepackage{listings}
+
+\lstset{
+%	backgroundcolor=\color{},
+	basicstyle=\small\ttfamily\color{black},
+%	breakatwhitespace=false,
+	breaklines=true,
+%	captionpos=b,
+	commentstyle=\color{darkalu},
+%	deletekeywords={...},
+%	escapeinside={\%*}{*)},
+%	extendedchars=true,
+%	frame=single,
+%	keepspaces=true,
+	keywordstyle=\kwstyle,
+	language=Caml,
+%	morekeywords={*,...},
+%	numbers=left,
+%	numbersep=5pt,
+%	numberstyle=\color{},
+%	rulecolor=\color{},
+%	showspaces=false,
+%	showstringspaces=false,
+%	showtabs=false,
+%	stepnumber=2,
+	stringstyle=\color{plum},
+	tabsize=2,
+%	title=\lstname,
+	keywordstyle=[1]\kwstyle\color{chameleon},
+	keywordstyle=[2]\kwstyle\color{scarletred},
+	keywordstyle=[3]\kwstyle\color{skyblue},
+	keywordstyle=[4]\kwstyle\color{butter},
+	keywordstyle=[5]\kwstyle\color{skyblue},
+	keywordstyle=[6]\kwstyle\color{skyblue},
+	keywordstyle=[7]\kwstyle\color{chameleon},
+	keywordstyle=[8]\kwstyle\color{butter},
+	keywordstyle=[9]\kwstyle\color{butter},
+	keywords=[1]{let,val,method,in,and,rec,private,virtual,constraint},
+	keywords=[2]{type,open,class,module,exception,external},
+	keywords=[3]{fun,function,functor,match,try,with},
+	keywords=[4]{as,when,of},
+	keywords=[5]{if,then,else},
+	keywords=[6]{begin,end,object,struct,sig,for,while,do,done,to,downto},
+	keywords=[7]{true,false},
+	keywords=[8]{include,inherit,initializer},
+	keywords=[9]{new,ref,mutable,lazy,assert,raise},
+}
+
+\lstset{literate=
+	{0}{{{\kwstyle\color{plum}0}}}1 {0.}{{{\kwstyle\color{plum}0.}}}2
+	{1}{{{\kwstyle\color{plum}1}}}1 {1.}{{{\kwstyle\color{plum}1.}}}2
+	{2}{{{\kwstyle\color{plum}2}}}1 {2.}{{{\kwstyle\color{plum}2.}}}2
+	{3}{{{\kwstyle\color{plum}3}}}1 {3.}{{{\kwstyle\color{plum}3.}}}2
+	{4}{{{\kwstyle\color{plum}4}}}1 {4.}{{{\kwstyle\color{plum}4.}}}2
+	{5}{{{\kwstyle\color{plum}5}}}1 {5.}{{{\kwstyle\color{plum}5.}}}2
+	{6}{{{\kwstyle\color{plum}6}}}1 {6.}{{{\kwstyle\color{plum}6.}}}2
+	{7}{{{\kwstyle\color{plum}7}}}1 {7.}{{{\kwstyle\color{plum}7.}}}2
+	{8}{{{\kwstyle\color{plum}8}}}1 {8.}{{{\kwstyle\color{plum}8.}}}2
+	{9}{{{\kwstyle\color{plum}9}}}1 {9.}{{{\kwstyle\color{plum}9.}}}2
+	{->}{{{\kwstyle\color{chameleon}$\rightarrow$}}}2
+}
