@@ -358,9 +358,6 @@ struct
           match at with
           | `Left -> Trope.put_after trope t.left t'
           | `Right -> Trope.put_before trope t.right t'
-          | `Anchor anchor ->
-            let cursor = Trope.make_cursor_after anchor t' in
-            Trope.put_back trope cursor, cursor
         in
         let trope, right = Trope.put_after  trope left t' in
         t.buffer.trope <- trope;
@@ -378,11 +375,6 @@ struct
       t'
 
     else t
-
-  let anchor ?(at=`Right) t =
-    match at with
-    | `Left -> Trope.Anchor.after (Trope.cursor_anchor t.left)
-    | `Right -> Trope.Anchor.before (Trope.cursor_anchor t.right)
 
   let make () =
     let socket = Socket.make ~receive:ignore in
@@ -422,8 +414,6 @@ let propertize flags = function
   | Null -> ()
   | Concrete t -> Concrete.propertize flags t
 
-type anchor = Order_managed.t
-
 let sub ?at ?observer = function
   | Null -> Null
   | Concrete t ->
@@ -432,10 +422,6 @@ let sub ?at ?observer = function
       | Some f -> Some (fun region -> f (Concrete region))
     in
     Concrete (Concrete.sub ?at ?observer t)
-
-let anchor ?at = function
-  | Null -> Trope.Anchor.root ()
-  | Concrete t -> Concrete.anchor ?at t
 
 let is_closed = function
   | Null -> true

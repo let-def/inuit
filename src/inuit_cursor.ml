@@ -8,10 +8,6 @@ type 'flags cursor = {
 
 type 'flags clickable = [> `Clickable | `Clicked] as 'flags
 
-type anchor = Inuit_region.anchor
-
-type gravity = [`Left | `Right | `Anchor of anchor]
-
 let null = { region = Inuit_region.null; flags = []; indent = 0 }
 
 let count_char str chr =
@@ -47,14 +43,14 @@ let clear t =
 let kill t =
   Inuit_region.kill t.region
 
-let sub ?at t = { t with region = Inuit_region.sub ?at t.region }
+let sub t = { t with region = Inuit_region.sub t.region }
 
-let observe ?at { region; flags; indent } f =
+let observe { region; flags; indent } f =
   let observer region =
     let t' = { region; flags; indent } in
     fun side patch -> f t' side patch
   in
-  { region = Inuit_region.sub ?at ~observer region; flags; indent }
+  { region = Inuit_region.sub ~observer region; flags; indent }
 
 let is_closed t = Inuit_region.is_closed t.region
 
@@ -77,12 +73,9 @@ let with_flags flags t = { t with flags }
 
 let region t = t.region
 
-let anchor ?at t =
-  Inuit_region.anchor ?at t.region
-
-let clickable t ?at f =
+let clickable t f =
   let t = add_flag `Clickable t in
-  observe ?at t (
+  observe t (
     fun t' side patch ->
       let {Patch. flags} =  patch in
       if List.mem `Clicked flags then
@@ -94,8 +87,8 @@ let clickable t ?at f =
 let printf t ?flags fmt =
   Printf.ksprintf (text t ?flags) fmt
 
-let link t ?at ?flags fmt =
-  Printf.ksprintf (fun str f -> text (clickable ?at t f) ?flags str) fmt
+let link t ?flags fmt =
+  Printf.ksprintf (fun str f -> text (clickable t f) ?flags str) fmt
 
 let cursor_of_region ?(flags=[]) ?(indent=0) region =
   { region; flags = flags; indent }
