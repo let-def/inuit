@@ -338,6 +338,18 @@ struct
          trope)
       t
 
+  let propertize flags t =
+    if is_open t then (
+      let buffer = t.buffer in
+      let trope = buffer.trope in
+      let offset = Trope.position trope t.left in
+      let length = Trope.position trope t.right - offset in
+      let patch = Patch.make ~offset flags (Patch.Propertize length) in
+      let observed = notify_observers buffer `Local t ~stop_at:[] patch in
+      Socket.send buffer.socket patch;
+      exec_observed observed;
+    )
+
   let sub ?(at=`Right) ?observer t =
     if is_open t then
       let rec t' = lazy (
@@ -397,6 +409,10 @@ let clear = function
 let kill = function
   | Null -> ()
   | Concrete t -> Concrete.kill t
+
+let propertize flags = function
+  | Null -> ()
+  | Concrete t -> Concrete.propertize flags t
 
 let sub ?at ?observer = function
   | Null -> Null

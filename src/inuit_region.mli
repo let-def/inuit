@@ -14,7 +14,7 @@ type 'flags t
 
 (** Add text to the right end of the region. The meaning of the [flags] is
     defined by the backend (consumer of the region). *)
-val append    : 'flags t -> 'flags list -> string -> unit
+val append : 'flags t -> 'flags list -> string -> unit
 
 (** Erase the content of the region.
     All sub-regions are [kill]ed (erased and closed). See [sub] to learn more
@@ -22,10 +22,13 @@ val append    : 'flags t -> 'flags list -> string -> unit
 
     New content can be added again through [append].  The most basic way to
     introduce interactivity is by replacing the content of a region. *)
-val clear     : 'flags t -> unit
+val clear : 'flags t -> unit
 
 (** Erase the content and close the region, see below. *)
-val kill      : 'flags t -> unit
+val kill : 'flags t -> unit
+
+(** Apply some flags on the region *)
+val propertize : 'flags list -> 'flags t -> unit
 
 (** One can put an observer to listen to patches applied on a region.
     This is the lowest level way to get feedback from actions done by the
