@@ -15,15 +15,15 @@ struct
 
   type 'flags t = {
     buffer : 'flags buffer;
-    left   : 'flags t lazy_t Trope.cursor;
-    right  : 'flags t lazy_t Trope.cursor;
-    parent : 'flags t lazy_t;
+    left   : Trope.cursor;
+    right  : Trope.cursor;
+    parent : 'flags t;
     observers : (side -> 'flags patch -> 'flags list * (unit -> unit) option) lazy_t list;
     mutable closed : bool;
   }
 
   and 'flags buffer = {
-    mutable trope : 'flags t lazy_t Trope.t;
+    mutable trope : 'flags t Trope.t;
     mutable status : status;
     mutable socket : 'flags patch Socket.controller;
   }
@@ -76,30 +76,27 @@ struct
   )
 
   let region_parent region =
-    let lazy parent = region.parent in
+    let parent = region.parent in
     if parent == region then
       None
     else
       Some parent
 
-  let region_before cursor =
-    let lazy region = Trope.content cursor in
-    if region.right == cursor then
-      Some region
-    else
-      region_parent region
+  let region_before trope cursor =
+    match Trope.find trope cursor with
+    | region when region.right == cursor -> Some region
+    | region -> region_parent region
+    | exception Not_found -> None
 
-  let region_after cursor =
-    let lazy region = Trope.content cursor in
-    if region.left == cursor then
-      Some region
-    else
-      region_parent region
+  let region_after trope cursor =
+    match Trope.find trope cursor with
+    | region when region.left == cursor -> Some region
+    | region -> region_parent region
+    | exception Not_found -> None
 
   let rec look_for_empty trope position cursor0 = (
-    match Trope.cursor_before trope cursor0 with
-    | Some cursor when Trope.position trope cursor = position -> (
-        let lazy region = Trope.content cursor in
+    match Trope.seek_before trope cursor0 with
+    | Some (cursor, region) when Trope.position trope cursor = position -> (
         if region.right == cursor0 then
           Some cursor
         else
@@ -111,19 +108,18 @@ struct
   let insertion_cursor ~left_leaning trope position = (
     match Trope.find_before trope position with
     | None -> (position, None)
-    | Some cursor0 ->
+    | Some (cursor0, region) ->
       match position - Trope.position trope cursor0 with
       | n when n < 0 -> assert false
       | 0 when left_leaning -> (
           match look_for_empty trope position cursor0 with
           | Some cursor -> (0, Some cursor)
           | None ->
-            let lazy region = Trope.content cursor0 in
             if region.left == cursor0 then
               (0, Some cursor0)
-            else match Trope.cursor_before trope cursor0 with
+            else match Trope.seek_before trope cursor0 with
               | None -> (position, None)
-              | Some cursor ->
+              | Some (cursor, _) ->
                 (position - Trope.position trope cursor, Some cursor)
         )
       | n -> (n, Some cursor0)
@@ -132,7 +128,8 @@ struct
   let replacement_bound trope position = (
     match Trope.find_after trope position with
     | None -> None
-    | Some cursor -> Some (Trope.position trope cursor - position, cursor)
+    | Some (cursor, region) ->
+      Some (Trope.position trope cursor - position, cursor)
   )
 
   let ancestor_region l r = (
@@ -160,9 +157,9 @@ struct
     let right_bound = replacement_bound trope (offset + old_len) in
     (* Find affected regions and ancestor *)
     let left_region =
-      match left_cursor with None -> None | Some c -> region_after c in
+      match left_cursor with None -> None | Some c -> region_after trope c in
     let right_region =
-      match right_bound with None -> None | Some (_,c) -> region_before c in
+      match right_bound with None -> None | Some (_,c) -> region_before trope c in
     let ancestor = match left_region, right_region with
       | None, _ | _, None -> None
       | Some l, Some r -> ancestor_region l r
@@ -201,13 +198,13 @@ struct
       let rec reinsert_from_left trope = function
         | Some region when check region ->
           reinsert_from_left
-            (Trope.put_back trope region.right) (region_parent region)
+            (Trope.put_left trope region.right region) (region_parent region)
         | _ -> trope
       in
       let rec reinsert_from_right trope = function
         | Some region when check region ->
           reinsert_from_right
-            (Trope.put_back trope region.left) (region_parent region)
+            (Trope.put_left trope region.left region) (region_parent region)
         | _ -> trope
       in
       let trope = reinsert_from_left trope left_region in
@@ -236,9 +233,9 @@ struct
     let right_bound = replacement_bound trope (offset + len) in
     (* Find affected regions and ancestor *)
     let left_region =
-      match left_cursor with None -> None | Some c -> region_after c in
+      match left_cursor with None -> None | Some c -> region_after trope c in
     let right_region =
-      match right_bound with None -> None | Some (_,c) -> region_before c in
+      match right_bound with None -> None | Some (_,c) -> region_before trope c in
     let ancestor = match left_region, right_region with
       | None, _ | _, None -> None
       | Some l, Some r -> ancestor_region l r
@@ -267,7 +264,7 @@ struct
       insertion_cursor ~left_leaning:true trope offset in
     let left_region = match left_cursor with
       | None -> None
-      | Some cursor -> region_after cursor
+      | Some cursor -> region_after trope cursor
     in
     let trope = match left_cursor with
       | None -> Trope.insert trope ~at:left_offset ~len:new_len
@@ -350,43 +347,53 @@ struct
       exec_observed observed;
     )
 
-  let sub ?(at=`Right) ?observer t =
-    if is_open t then
-      let rec t' = lazy (
-        let trope = t.buffer.trope in
-        let trope, left =
-          match at with
-          | `Left -> Trope.put_after trope t.left t'
-          | `Right -> Trope.put_before trope t.right t'
-        in
-        let trope, right = Trope.put_after  trope left t' in
-        t.buffer.trope <- trope;
-        let observers = match observer with
-          | None -> t.observers
-          | Some observer -> lazy (observer (Lazy.force t')) :: t.observers
-        in
-        { t with left; right; observers; parent = lazy t }
-      ) in
-      let lazy t' = t' in
+  let sub ?(at=`Right) ?observer parent =
+    if is_open parent then
+      let left = match at with
+        | `Left -> Trope.cursor_after parent.left
+        | `Right -> Trope.cursor_before parent.right
+      in
+      let right = Trope.cursor_after left in
+      let buffer = parent.buffer in
+      let t' = match observer with
+        | None -> { left; right; parent; buffer; closed = false;
+                    observers = parent.observers }
+        | Some observer ->
+          let rec t' =
+            { left; right; parent; buffer; closed = false;
+              observers = lazy (observer t') :: parent.observers }
+          in
+          t'
+      in
+      let trope = buffer.trope in
+      let trope = match at with
+        | `Left -> Trope.put_left trope left t'
+        | `Right -> Trope.put_right trope left t'
+      in
+      buffer.trope <- (Trope.put_left trope right t');
       begin match t'.observers with
         | [] -> ()
         | lazy _x :: _ -> ()
       end;
       t'
 
-    else t
+    else parent
 
   let make () =
     let socket = Socket.make ~receive:ignore in
-    let rec t' = lazy (
-      let trope = Trope.create () in
-      let trope, left  = Trope.put_cursor trope ~at:0 t' in
-      let trope, right = Trope.put_after  trope left  t' in
-      let buffer = { trope; status = Ready; socket } in
-      { buffer; left; right; observers = []; parent = t'; closed = false }
-    ) in
-    let lazy t' = t' in
+    let trope = Trope.create () in
+    let left = Trope.cursor_at_origin trope in
+    let right = Trope.cursor_after left in
+    let rec t' = {
+      left;
+      right;
+      buffer = { trope; status = Ready; socket };
+      closed = false;
+      parent = t';
+      observers = [];
+    } in
     let buffer = t'.buffer in
+    buffer.trope <- Trope.put_left (Trope.put_left trope left t') right t';
     Socket.set_receive socket (remote_change buffer);
     Socket.set_on_closed socket
       (fun () -> buffer.trope <- Trope.clear buffer.trope);
