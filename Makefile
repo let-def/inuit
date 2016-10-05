@@ -1,10 +1,26 @@
 TARGETS = default clean lib-native doc tests
+OCAMLBUILD ?= ocamlbuild -use-ocamlfind -classic-display -tag debug
+
 all: default
 
 .PHONY: all $(TARGETS)
 
-$(TARGETS):
-	sh build $@
+default: lib-native
 
-%:
-	sh build $@
+lib-native:
+	$(OCAMLBUILD) inuit.cmxa
+	
+lib-byte:
+	$(OCAMLBUILD) inuit.cma
+
+test tests:
+	$(OCAMLBUILD) test/tests.otarget
+
+doc:    
+	topkg doc $(ARGS)
+
+dev-doc:
+	topkg doc --dev $(ARGS)
+
+clean:
+	$(OCAMLBUILD) -clean
