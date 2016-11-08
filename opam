@@ -1,3 +1,5 @@
+name: "inuit"
+version: "0.1"
 opam-version: "1.2"
 maintainer: "Frédéric Bour <frederic.bour@lakaban.net>"
 authors: ["Frédéric Bour <frederic.bour@lakaban.net>"]
