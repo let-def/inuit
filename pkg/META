@@ -1,5 +1,5 @@
 description = "Make interactive text-based user-interfaces in OCaml"
-version = "%%VERSION%%"
+version = "%%VERSION_NUM%%"
 requires = "grenier.trope"
 archive(byte) = "inuit.cma"
 archive(native) = "inuit.cmxa"
