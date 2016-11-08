@@ -1,3 +1,5 @@
+name: "inuit"
+version: "0.1"
 opam-version: "1.2"
 maintainer: "Frédéric Bour <frederic.bour@lakaban.net>"
 authors: ["Frédéric Bour <frederic.bour@lakaban.net>"]
@@ -12,7 +14,7 @@ depends: [
   "ocamlfind" {build}
   "ocamlbuild" {build}
   "topkg" {build}
-  "grenier"
+  "grenier" {>= "0.4"}
 ]
 depopts: []
 build:
