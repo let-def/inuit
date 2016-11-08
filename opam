@@ -14,7 +14,7 @@ depends: [
   "ocamlfind" {build}
   "ocamlbuild" {build}
   "topkg" {build}
-  "grenier"
+  "grenier" {>= "0.4"}
 ]
 depopts: []
 build:
