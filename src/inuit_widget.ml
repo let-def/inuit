@@ -61,11 +61,12 @@ struct
       update_frame t
 
   let render_header t cursor =
-    link cursor "⏪" (fun _ -> prev t);
+    (*⏪*) (*↻*) (*⏩*)
+    link cursor "[<<]" (fun _ -> prev t);
     text cursor " ";
-    link cursor "↻" (fun _ -> update_frame t);
+    link cursor "[reload]" (fun _ -> update_frame t);
     text cursor " ";
-    link cursor	"⏩" (fun _ -> next t)
+    link cursor	"[>>]" (fun _ -> next t)
 
   let render t cursor =
     if not (is_closed cursor) then (
@@ -100,16 +101,16 @@ struct
   let add_node children ?action ?(opened=ref false) t =
     let body = ref None in
     text t "\n";
-    link t (if !opened then "▪" else "▫") (fun c ->
+    link t (if !opened then "[-]" else "[+]") (fun c ->
         match !body with
         | None -> ()
         | Some t' when !opened ->
           opened := false;
-          clear c; text c "▫";
+          clear c; text c "[+]";
           clear t'
         | Some t' ->
           opened := true;
-          clear c; text c "▪";
+          clear c; text c "[-]";
           children t'
       );
     text t " ";
