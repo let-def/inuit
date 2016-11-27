@@ -92,12 +92,10 @@ struct
   let make cursor = sub cursor
 
   let add_leaf ?action t =
-    let result = match action with
-      | Some action -> clickable t action
-      | None -> sub t
-    in
     text t "\n";
-    result
+    match action with
+    | Some action -> clickable t action
+    | None -> sub t
 
   let add_node children ?action ?(opened=ref false) t =
     let body = ref None in
