@@ -118,7 +118,7 @@ struct
       | None -> sub t
       | Some action -> clickable t action
     in
-    let t' = shift_indent (sub t) (+2) in
+    let t' = shift_indent (sub t) (+1) in
     body := Some t';
     if !opened then children t';
     result
