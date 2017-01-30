@@ -2,9 +2,13 @@ inuit — Make interactive text-based user-interfaces in OCaml
 -------------------------------------------------------------------------------
 %%VERSION%%
 
-inuit is TODO
+Inuit is an abstraction for interactively updating a text buffer. 
+It is designed to be use with a backend that will present the buffer to the
+end user.
+[Sturgeon](https://github.com/let-def/sturgeon) is a backend targeting emacs
+buffers.
 
-inuit is distributed under the ISC license.
+Inuit is distributed under the ISC license.
 
 Homepage: https://github.com/let-def/inuit  
 Contact: Frédéric Bour `<frederic.bour@lakaban.net>`
