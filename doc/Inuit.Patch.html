@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="next" href="Inuit.Socket.html">
+<link rel="Up" href="Inuit.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Inuit" rel="Chapter" href="Inuit.html">
+<link title="Inuit_base" rel="Chapter" href="Inuit_base.html">
+<link title="Inuit_cursor" rel="Chapter" href="Inuit_cursor.html">
+<link title="Inuit_region" rel="Chapter" href="Inuit_region.html">
+<link title="Inuit_remote" rel="Chapter" href="Inuit_remote.html">
+<link title="Inuit_trace" rel="Chapter" href="Inuit_trace.html">
+<link title="Inuit_widget" rel="Chapter" href="Inuit_widget.html"><title>Inuit.Patch</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a class="up" href="Inuit.html" title="Inuit">Up</a>
+&nbsp;<a class="post" href="Inuit.Socket.html" title="Inuit.Socket">Next</a>
+</div>
+<h1>Module <a href="type_Inuit.Patch.html">Inuit.Patch</a></h1>
+
+<pre><span class="keyword">module</span> Patch: <code class="type"><a href="Inuit_base.Patch.html">Inuit_base.Patch</a></code></pre><hr width="100%">
+
+<pre><code><span id="TYPEoperation"><span class="keyword">type</span> <code class="type"></code>operation</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELToperation.Remove"><span class="constructor">Remove</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELToperation.Insert"><span class="constructor">Insert</span></span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELToperation.Replace"><span class="constructor">Replace</span></span> <span class="keyword">of</span> <code class="type">int * string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELToperation.Propertize"><span class="constructor">Propertize</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr></table>
+
+
+
+<pre><code><span id="TYPEt"><span class="keyword">type</span> <code class="type">'flags</code> t</span> = private {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.offset">offset</span>&nbsp;: <code class="type">int</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+Starting at <code class="code">offset</code>'th unicode sequence<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.operation">operation</span>&nbsp;: <code class="type"><a href="Inuit_base.Patch.html#TYPEoperation">operation</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.text_len">text_len</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.flags">flags</span>&nbsp;: <code class="type">'flags list</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+A list of backend defined <code class="code">flags</code>.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+}
+
+<div class="info ">
+A <code class="code">flags&nbsp;<span class="constructor">Patch</span>.t</code> represents the replacement of a piece of text by
+      another, possibly annotated by values of type <code class="code">flags</code>.<br>
+</div>
+
+
+<pre><span id="VALutf8_length"><span class="keyword">val</span> utf8_length</span> : <code class="type">string -> int</code></pre><div class="info ">
+<code class="code">utf8_length&nbsp;str</code> is the number of unicode sequences in <code class="code">str</code>.
+<p>
+
+      <code class="code">str</code> is assumed to be a valid utf-8 string, result is undefined
+      otherwise.<br>
+</div>
+
+<pre><span id="VALutf8_offset"><span class="keyword">val</span> utf8_offset</span> : <code class="type">string -> ?offset:int -> int -> int</code></pre><div class="info ">
+<code class="code">utf8_offset&nbsp;str&nbsp;?offset&nbsp;index</code> returns the offset as a number of bytes
+      of the <code class="code">index</code>th unicode sequences in <code class="code">str</code>.
+<p>
+
+      If <code class="code">offset</code> is provided, search starts from this byte. Otherwise it
+      defaults to 0.
+      If <code class="code">index</code> is 0, 0 is returned.
+      If <code class="code">index</code> is one more than the number of sequences in <code class="code">str</code>,
+      <code class="code"><span class="constructor">String</span>.length&nbsp;str</code> is returned.
+      If <code class="code">index</code> is even more than that, exception <code class="code"><span class="constructor">Not_found</span></code> is thrown.
+<p>
+
+      <code class="code">str</code> is assumed to be a valid utf-8 string, result is undefined
+      otherwise.<br>
+</div>
+
+<pre><span id="VALmake"><span class="keyword">val</span> make</span> : <code class="type">offset:int -><br>       'flags list -> <a href="Inuit_base.Patch.html#TYPEoperation">operation</a> -> 'flags <a href="Inuit_base.Patch.html#TYPEt">t</a></code></pre><div class="info ">
+Produces a patch, ensuring that <code class="code">new_len&nbsp;=&nbsp;utf8_length&nbsp;text</code>.
+      TODO: validate utf-8 string.<br>
+</div>
+
+<pre><span id="VALwith_flags"><span class="keyword">val</span> with_flags</span> : <code class="type">'flags list -> 'flags <a href="Inuit_base.Patch.html#TYPEt">t</a> -> 'flags <a href="Inuit_base.Patch.html#TYPEt">t</a></code></pre><div class="info ">
+Replace the flags in a patch by a new list<br>
+</div>
+
+<pre><span id="VALremoved"><span class="keyword">val</span> removed</span> : <code class="type">'a <a href="Inuit_base.Patch.html#TYPEt">t</a> -> int</code></pre>
+<pre><span id="VALinserted"><span class="keyword">val</span> inserted</span> : <code class="type">'a <a href="Inuit_base.Patch.html#TYPEt">t</a> -> int</code></pre>
+<pre><span id="VALinserted_text"><span class="keyword">val</span> inserted_text</span> : <code class="type">'a <a href="Inuit_base.Patch.html#TYPEt">t</a> -> string</code></pre></body></html>

@@ -1,0 +1,37 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Inuit_remote.html">
+<link rel="next" href="Inuit_widget.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Inuit" rel="Chapter" href="Inuit.html">
+<link title="Inuit_base" rel="Chapter" href="Inuit_base.html">
+<link title="Inuit_cursor" rel="Chapter" href="Inuit_cursor.html">
+<link title="Inuit_region" rel="Chapter" href="Inuit_region.html">
+<link title="Inuit_remote" rel="Chapter" href="Inuit_remote.html">
+<link title="Inuit_trace" rel="Chapter" href="Inuit_trace.html">
+<link title="Inuit_widget" rel="Chapter" href="Inuit_widget.html"><title>Inuit_trace</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Inuit_remote.html" title="Inuit_remote">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="Inuit_widget.html" title="Inuit_widget">Next</a>
+</div>
+<h1>Module <a href="type_Inuit_trace.html">Inuit_trace</a></h1>
+
+<pre><span class="keyword">module</span> Inuit_trace: <code class="code"><span class="keyword">sig</span></code> <a href="Inuit_trace.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><hr width="100%">
+
+<pre><span id="TYPEtrace"><span class="keyword">type</span> <code class="type">'flags</code> trace</span> </pre>
+
+
+<pre><span id="VALnull"><span class="keyword">val</span> null</span> : <code class="type">'flags <a href="Inuit_trace.html#TYPEtrace">trace</a></code></pre>
+<pre><span id="VALinitial"><span class="keyword">val</span> initial</span> : <code class="type">?depth:int -> 'flags <a href="Inuit_cursor.html#TYPEcursor">Inuit_cursor.cursor</a> -> 'flags <a href="Inuit_trace.html#TYPEtrace">trace</a></code></pre>
+<pre><span id="VALcall"><span class="keyword">val</span> call</span> : <code class="type">string -><br>       ('a -> string) -><br>       ('b -> string) -><br>       (([> `Clickable | `Clicked ] as 'c) <a href="Inuit_cursor.html#TYPEclickable">Inuit_cursor.clickable</a> <a href="Inuit_trace.html#TYPEtrace">trace</a> -><br>        'a -> 'b) -><br>       'c <a href="Inuit_cursor.html#TYPEclickable">Inuit_cursor.clickable</a> <a href="Inuit_trace.html#TYPEtrace">trace</a> -> 'a -> 'b</code></pre>
+<pre><span id="VALfix"><span class="keyword">val</span> fix</span> : <code class="type">string -><br>       ('a -> string) -><br>       ('b -> string) -><br>       (('a -> 'b) -> 'a -> 'b) -><br>       [> `Clickable | `Clicked ] <a href="Inuit_cursor.html#TYPEclickable">Inuit_cursor.clickable</a> <a href="Inuit_trace.html#TYPEtrace">trace</a> -><br>       'a -> 'b</code></pre></body></html>
