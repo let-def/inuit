@@ -23,11 +23,18 @@ end
 module Tree : sig
   type 'flags t = 'flags cursor
 
-  val make  : 'flags cursor -> 'flags t
-  val add   : ?children:('flags t -> unit) ->
-              ?action:('flags cursor -> unit) ->
-              ?opened:bool ref -> 'flags clickable t -> 'flags cursor
-  val clear : 'flags t -> unit
+  val make   : 'flags cursor -> 'flags t
+  val add    : ?children:('flags t -> unit) ->
+               ?action:('flags cursor -> unit) ->
+               ?opened:bool ref -> 'flags clickable t -> 'flags cursor
+  val clear  : 'flags t -> unit
+  val cursor : 'flags t -> 'flags cursor
+  val null   : 'flags t
+
+  val add_and_return :
+    children:('flags t -> 'b) ->
+    ?action:('flags cursor -> unit) ->
+    ?opened:bool ref -> 'flags clickable t -> 'b * 'flags cursor
 end
 
 module Check : sig

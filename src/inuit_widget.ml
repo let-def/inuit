@@ -111,7 +111,7 @@ struct
         | Some t' ->
           opened := true;
           clear c; text c "[-]";
-          children t'
+          ignore (children t')
       );
     text t " ";
     let result = match action with
@@ -120,18 +120,30 @@ struct
     in
     let t' = shift_indent (sub t) (+1) in
     body := Some t';
-    if !opened then children t';
-    result
+    let acc = if !opened then Some (children t') else None in
+    (acc, result)
 
   let add ?children ?action ?opened t =
     if not_closed t then (
       match children with
       | None -> add_leaf ?action t
-      | Some children -> add_node children ?action ?opened t
+      | Some children -> snd (add_node children ?action ?opened t)
     ) else
       t
 
+  let add_and_return ~children ?action ?opened t =
+    if not_closed t then (
+      match add_node children ?action ?opened t with
+      | None, result -> (children null, result)
+      | Some acc, result -> (acc, result)
+    ) else
+      (children null, t)
+
   let clear t = clear t
+
+  let cursor t = t
+
+  let null = null
 end
 
 module Check =
