@@ -1,3 +1,10 @@
+v0.3 2017-10-09 Paris
+--------------------------
+
+Disable click on the right border of a region (cursor must be inside, not on
+the border).
+Tweak Widget.Tree api.
+
 v0.2 2017-01-22 London
 --------------------------
 
