@@ -14,9 +14,9 @@ struct
     ; flags     : 'flags list (** A list of backend defined [flags].       *)
     }
 
-  let utf8_length str =
+  let utf8_length ?(offset=0) str =
     let count = ref 0 in
-    for i = 0 to String.length str - 1 do
+    for i = offset to String.length str - 1 do
       let c = Char.code str.[i] in
       if c land 0xC0 <> 0x80 then
         incr count

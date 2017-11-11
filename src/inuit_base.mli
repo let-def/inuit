@@ -34,7 +34,7 @@ sig
 
       [str] is assumed to be a valid utf-8 string, result is undefined
       otherwise. *)
-  val utf8_length : string -> int
+  val utf8_length : ?offset:int -> string -> int
 
   (** [utf8_offset str ?offset index] returns the offset as a number of bytes
       of the [index]th unicode sequences in [str].
