@@ -1,3 +1,10 @@
+v0.4 2017-11-12 Paris
+--------------------------
+
+Introduce an experimental `Inuit_format` module to integrate with stdlib
+`Format.formatter`.
+Minor: `Inuit_base.utf8_length` takes an optional offset.
+
 v0.3 2017-10-09 Paris
 --------------------------
 
