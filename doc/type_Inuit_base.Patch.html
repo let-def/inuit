@@ -27,7 +27,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;text_len&nbsp;:&nbsp;int;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;flags&nbsp;:&nbsp;<span class="keywordsign">'</span>flags&nbsp;list;<br>
 &nbsp;&nbsp;}<br>
-&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;utf8_length&nbsp;:&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;utf8_length&nbsp;:&nbsp;?offset:int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;utf8_offset&nbsp;:&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;?offset:int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;make&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;offset:int&nbsp;<span class="keywordsign">-&gt;</span><br>
