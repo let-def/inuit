@@ -9,12 +9,11 @@ bug-reports: "https://github.com/let-def/inuit/issues"
 tags: []
 available: [ ocaml-version >= "4.01.0"]
 depends: [
-  "ocamlfind" {build}
-  "ocamlbuild" {build}
-  "topkg" {build}
+  "jbuilder" {build}
   "grenier" {>= "0.4"}
 ]
 depopts: []
-build:
-[[ "ocaml" "pkg/pkg.ml" "build"
-           "--pinned" "%{pinned}%" ]]
+build: [
+  ["jbuilder" "subst" "-n" name] {pinned}
+  ["jbuilder" "build" "-p" name "-j" jobs]
+]
