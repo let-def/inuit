@@ -1,3 +1,8 @@
+v0.4.1 2018-06-16 Paris
+--------------------------
+
+Port to dune/jbuilder, contributed by @rgrinberg.
+
 v0.4 2017-11-12 Paris
 --------------------------
 
