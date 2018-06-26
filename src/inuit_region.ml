@@ -350,10 +350,16 @@ struct
   let sub ?(at=`Right) ?observer parent =
     if is_open parent then
       let left = match at with
-        | `Left -> Trope.cursor_after parent.left
-        | `Right -> Trope.cursor_before parent.right
+        | `Before -> Trope.cursor_before parent.left
+        | `Left   -> Trope.cursor_after parent.left
+        | `Right  -> Trope.cursor_before parent.right
+        | `After  -> Trope.cursor_after parent.right
       in
       let right = Trope.cursor_after left in
+      let parent = match at with
+        | `Before | `After -> parent.parent
+        | `Left   | `Right -> parent
+      in
       let buffer = parent.buffer in
       let t' = match observer with
         | None -> { left; right; parent; buffer; closed = false;
@@ -367,8 +373,8 @@ struct
       in
       let trope = buffer.trope in
       let trope = match at with
-        | `Left -> Trope.put_left trope left t'
-        | `Right -> Trope.put_right trope left t'
+        | `Right | `Before -> Trope.put_right trope left t'
+        | `Left  | `After  -> Trope.put_left trope left t'
       in
       buffer.trope <- (Trope.put_left trope right t');
       begin match t'.observers with
