@@ -53,6 +53,8 @@ let observe { region; flags; indent } f =
   { region = Inuit_region.sub ~observer region; flags; indent }
 
 let is_closed t = Inuit_region.is_closed t.region
+let is_open t = Inuit_region.is_open t.region
+
 
 let mem_flag flag cursor =
   List.mem flag cursor.flags

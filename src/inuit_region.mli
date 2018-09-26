@@ -72,6 +72,7 @@ val sub : ?at:[`Before | `Left | `Right | `After] ->
     You can for instance use this to skip expensive computations to produce
     text that will anyway never be useful. *)
 val is_closed : 'flags t -> bool
+val is_open : 'flags t -> bool
 
 (** Get the physical position of the region of the left end of the region.
 

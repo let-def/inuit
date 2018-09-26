@@ -440,6 +440,10 @@ let is_closed = function
   | Null -> true
   | Concrete t -> Concrete.is_closed t
 
+let is_open = function
+  | Null -> false
+  | Concrete t -> Concrete.is_open t
+
 let unsafe_left_offset = function
   | Null -> 0
   | Concrete t -> Concrete.unsafe_left_offset t

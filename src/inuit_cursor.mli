@@ -44,6 +44,7 @@ val observe : 'flags cursor ->
     This can happen when using [kill], or [clear] on a parent cursor, and when
     the root socket is closed. *)
 val is_closed  : 'flags cursor -> bool
+val is_open  : 'flags cursor -> bool
 
 (** The region affected by this cursor *)
 val region     : 'flags cursor -> 'flags Inuit_region.t
