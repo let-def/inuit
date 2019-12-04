@@ -22,14 +22,12 @@ struct
     nav: 'flags t;
   }
 
-  let null_page : _ page = "", ignore
-
   let make title body =
     let page = (title, body) in
     { prev = []; page; next = []; frame = None }
 
   let update_frame t = match t.frame with None -> () | Some frame ->
-    let {title; body} = frame in
+    let {title; body; nav=_} = frame in
     clear title;
     text title (fst t.page);
     clear body;
@@ -161,7 +159,7 @@ struct
   let make ?(state=false) ?(on_change=ignore) cursor = (
     text cursor "[";
     let t = { cursor; state } in
-    t.cursor <- clickable cursor (fun check ->
+    t.cursor <- clickable cursor (fun _check ->
         t.state <- not t.state;
         render t;
         on_change t
@@ -230,7 +228,7 @@ struct
     let cursor = add_flag `Editable cursor in
     let rubber = observe cursor
         (fun cursor' side p ->
-           let {Patch. flags} = p in
+           let {Patch. flags;_} = p in
            (flags,
             if side = `Local then
               None
@@ -274,7 +272,7 @@ struct
         (let update = match on_change with
             | None -> Some (fun _ -> render t)
             | Some f -> Some (fun _ -> render t; f t)
-         in fun cursor' side p ->
+         in fun _cursor' side p ->
            p.Patch.flags,
            if side = `Remote then (
              let delta = Patch.inserted p - Patch.removed p
