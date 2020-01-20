@@ -71,10 +71,6 @@ struct
     | Ready -> ()
   )
 
-  let local_change buffer region patch = (
-    exec_observed (notify_observers buffer `Local region ~stop_at:[] patch);
-  )
-
   let region_parent region =
     let parent = region.parent in
     if parent == region then
@@ -128,7 +124,7 @@ struct
   let replacement_bound trope position = (
     match Trope.find_after trope position with
     | None -> None
-    | Some (cursor, region) ->
+    | Some (cursor, _region) ->
       Some (Trope.position trope cursor - position, cursor)
   )
 
@@ -228,7 +224,7 @@ struct
   let remote_propertize b ({Patch.offset; _} as patch) len = (
     let trope = b.trope in
     (* Find bounds *)
-    let left_offset, left_cursor =
+    let _left_offset, left_cursor =
       insertion_cursor ~left_leaning:false trope offset in
     let right_bound = replacement_bound trope (offset + len) in
     (* Find affected regions and ancestor *)
@@ -286,7 +282,7 @@ struct
                    attempt to change locked buffer \
                    (buffer under observation)"
     | Ready ->
-        let {Patch. operation; offset; text_len} = patch in
+      let {Patch. operation; offset=_; text_len; flags=_} = patch in
         match operation with
         | Patch.Remove n -> remote_replace b patch n 0
         | Patch.Replace (n,_) -> remote_replace b patch n text_len

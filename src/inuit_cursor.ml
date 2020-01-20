@@ -76,8 +76,8 @@ let region t = t.region
 let clickable t f =
   let t = add_flag `Clickable t in
   observe t (
-    fun t' side patch ->
-      let {Patch. flags; offset} =  patch in
+    fun t' _side patch ->
+      let {Patch. flags; offset; _} =  patch in
       if Inuit_region.unsafe_right_offset t'.region > offset &&
          List.mem `Clicked flags then
         (List.filter ((<>) `Clicked) flags, Some (fun () -> f t'))

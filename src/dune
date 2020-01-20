@@ -1,0 +1,6 @@
+(library
+ (name inuit)
+ (public_name inuit)
+ (wrapped false)
+ (synopsis "Make interactive text-based user-interfaces in OCaml")
+ (libraries grenier.trope))

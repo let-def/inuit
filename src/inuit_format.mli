@@ -2,6 +2,7 @@ module Make (M : sig type flag end) :
 sig
   type cursor = M.flag Inuit.cursor
 
+  val null_formatter : Format.formatter
   val formatter_of_cursor : cursor -> Format.formatter
 
   val push_cursor : (cursor -> cursor) -> Format.formatter -> unit

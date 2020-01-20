@@ -88,9 +88,11 @@ sig
 
   (** [set_receive] sets the callback invoked when a message is received.*)
   val set_receive :  'a controller -> ('a -> unit) -> unit
+
   (** [set_on_closed] sets the callback invoked when the connection terminates.
       Closing is definitive (it can happen at most once). *)
   val set_on_closed : 'a controller -> (unit -> unit) -> unit
+
   (** [set_on_connected] sets the callback invoked when the connection is
       established. It can be invoked at most once. *)
   val set_on_connected : 'a controller -> (unit -> unit) -> unit
