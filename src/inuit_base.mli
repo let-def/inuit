@@ -80,37 +80,39 @@ sig
       - send messages to the other end,
       - terminates the connection.
   *)
-  type 'a controller
+  type ('i, 'o) asymmetric_controller
+  type 'a controller = ('a, 'a) asymmetric_controller
 
   (** [make ~receive] creates a new controller that will call [receive] when a
       message is received. *)
-  val make : receive:('a -> unit) -> 'a controller
+  val make : receive:('i -> unit) -> ('i, 'o) asymmetric_controller
 
   (** [set_receive] sets the callback invoked when a message is received.*)
-  val set_receive :  'a controller -> ('a -> unit) -> unit
+  val set_receive : ('i,' o) asymmetric_controller -> ('i -> unit) -> unit
 
   (** [set_on_closed] sets the callback invoked when the connection terminates.
       Closing is definitive (it can happen at most once). *)
-  val set_on_closed : 'a controller -> (unit -> unit) -> unit
+  val set_on_closed : _ asymmetric_controller -> (unit -> unit) -> unit
 
   (** [set_on_connected] sets the callback invoked when the connection is
       established. It can be invoked at most once. *)
-  val set_on_connected : 'a controller -> (unit -> unit) -> unit
+  val set_on_connected : _ asymmetric_controller -> (unit -> unit) -> unit
 
   (** [send ctrl msg] sends one message to the other end.
       [status (endpoint ctrl)] should be [`Connected] for this to succeed.
       Fail with [Invalid_argument] otherwise.  *)
-  val send : ?buffer:bool -> 'msg controller -> 'msg -> unit
+  val send : ?buffer:bool -> ('i, 'o) asymmetric_controller -> 'o -> unit
 
   (** [close ctrl] terminates the connection now.
       If [status (endpoint ctrl)] is [`Pending] or [`Connected], it is updated
       to [`Closed] and [on_closed] callback is invoked.
       If [status (endpoint ctrl)] is already [`Closed], nothing happens. *)
-  val close : 'msg controller -> unit
+  val close : _ asymmetric_controller -> unit
 
   (** A handle exposed to higher-level code to connect sockets together. *)
-  type 'a t
-  val endpoint : 'a controller -> 'a t
+  type ('i, 'o) asymmetric
+  type 'a t = ('a, 'a) asymmetric
+  val endpoint : ('i, 'o) asymmetric_controller -> ('i, 'o) asymmetric
 
   (** Get the status of the socket.
       Possible statuses are:
@@ -119,13 +121,13 @@ sig
       - [`Connected], connection has been established, messages can be sent.
       - [`Closed], connection is terminated, no messages can be sent anymore.
   *)
-  val status : 'msg t -> [ `Pending | `Connected | `Closed ]
+  val status : _ t -> [ `Pending | `Connected | `Closed ]
 
   (** Connect two sockets together.  Both should be in [`Pending] status.
       Fail with [Invalid_argument] otherwise.  *)
-  val connect : a:'msg t -> b:'msg t -> unit
+  val connect : a:('a, 'b) asymmetric -> b:('b, 'a) asymmetric -> unit
 end
 
 type 'flags patch = 'flags Patch.t
 
-type 'msg socket = 'msg Socket.t
+type 'a socket = 'a Socket.t

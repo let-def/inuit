@@ -64,19 +64,22 @@ type 'flags patch = 'flags Patch.t
 module Socket =
 struct
 
-  type 'msg t = {
-    mutable receive      : 'msg -> unit;
+  type ('i, 'o) asymmetric = {
+    mutable receive      : 'i -> unit;
     mutable on_connected : unit -> unit;
     mutable on_closed    : unit -> unit;
-    mutable status       : 'msg status;
+    mutable status       : ('i, 'o) status;
   }
 
-  and 'msg status =
-    | Pending of 'msg list
-    | Connected of 'msg t
+  and ('i, 'o) status =
+    | Pending of 'o list
+    | Connected of ('o, 'i) asymmetric
     | Closed
 
-  type 'a controller = 'a t
+  type ('i, 'o) asymmetric_controller = ('i, 'o) asymmetric
+
+  type 'a t = ('a, 'a) asymmetric
+  type 'a controller = ('a, 'a) asymmetric_controller
 
   let make ~receive =
     {
@@ -150,4 +153,4 @@ struct
   let endpoint socket = socket
 end
 
-type 'msg socket = 'msg Socket.t
+type 'a socket = 'a Socket.t
