@@ -72,7 +72,7 @@ struct
   }
 
   and 'msg status =
-    | Pending
+    | Pending of 'msg list
     | Connected of 'msg t
     | Closed
 
@@ -83,22 +83,26 @@ struct
       receive      = receive;
       on_connected = ignore;
       on_closed    = ignore;
-      status       = Pending;
+      status       = Pending [];
     }
 
-  let send t msg =
+  let send ?(buffer=true) t msg =
     match t.status with
     | Connected remote ->
       remote.receive msg
-    | Pending ->
-      invalid_arg "Inuit.Socket.send: sending data to unconnected pipe"
+    | Pending msgs ->
+      if buffer then
+        t.status <- Pending (msg :: msgs)
+      else
+        invalid_arg "Inuit.Socket.send: sending data to unconnected pipe"
     | Closed ->
       invalid_arg "Inuit.Socket.send: sending data to closed pipe"
 
   let close t =
     match t.status with
     | Closed -> ()
-    | Pending ->
+    | Pending _drop ->
+      (* TODO: do something with dropped messages? *)
       t.status <- Closed;
       t.on_closed ();
       t.on_connected <- ignore;
@@ -116,16 +120,18 @@ struct
 
   let connect ~a ~b =
     match a.status, b.status with
-    | Pending, Pending ->
+    | Pending bmsgs, Pending amsgs ->
       a.status <- Connected b;
       b.status <- Connected a;
       a.on_connected ();
       b.on_connected ();
       a.on_connected <- ignore;
-      b.on_connected <- ignore
+      b.on_connected <- ignore;
+      List.iter b.receive (List.rev bmsgs);
+      List.iter a.receive (List.rev amsgs)
     | _ ->
       let to_str = function
-        | Pending -> "pending"
+        | Pending _ -> "pending"
         | Closed -> "already closed"
         | Connected _ -> "already connected"
       in
@@ -133,7 +139,7 @@ struct
                    "and pipe b is " ^ to_str b.status)
 
   let status t = match t.status with
-    | Pending     -> `Pending
+    | Pending _   -> `Pending
     | Connected _ -> `Connected
     | Closed      -> `Closed
 

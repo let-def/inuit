@@ -100,7 +100,7 @@ sig
   (** [send ctrl msg] sends one message to the other end.
       [status (endpoint ctrl)] should be [`Connected] for this to succeed.
       Fail with [Invalid_argument] otherwise.  *)
-  val send : 'msg controller -> 'msg -> unit
+  val send : ?buffer:bool -> 'msg controller -> 'msg -> unit
 
   (** [close ctrl] terminates the connection now.
       If [status (endpoint ctrl)] is [`Pending] or [`Connected], it is updated
