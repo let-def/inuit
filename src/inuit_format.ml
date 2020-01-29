@@ -19,7 +19,7 @@ sig
 end = struct
   type cursor = M.flag Inuit.cursor
 
-  let magic_tag = "inuit-cookie"
+  type Format.stag += Inuit_cookie
 
   type magic_cookie =
     | Empty
@@ -59,50 +59,56 @@ end = struct
         )
         (fun () -> ())
     in
-    let pop_tag tag =
-      if tag == magic_tag then (
-        match state.mark_head with
-        | [] -> assert false
-        | [_] ->
-          state.mark_head <- List.rev state.mark_tail;
-          state.mark_tail <- []
-        | _ :: xs -> state.mark_head <- xs;
-      );
-      ""
+    let pop_tag = function
+      | Inuit_cookie -> (
+          match state.mark_head with
+          | [] -> assert false
+          | [_] ->
+            state.mark_head <- List.rev state.mark_tail;
+            state.mark_tail <- []
+          | _ :: xs -> state.mark_head <- xs;
+        ); ""
+      | _ -> ""
     in
-    Format.pp_set_formatter_tag_functions pp {
+    Format.pp_set_formatter_stag_functions pp {
       Format.
-      mark_open_tag = pop_tag;
-      mark_close_tag = pop_tag;
-      print_open_tag = (fun tag -> if tag == magic_tag then (
-          match !magic_cookie with
-          | Empty -> invalid_arg "Inuit_format.print_open_tag: handler not found (internal error?)"
-          | Cursor f ->
-            magic_cookie := Empty;
-            begin match state.print_stack with
-            | [] -> invalid_arg "Inuit_format.print_open_tag: stack is empty (internal error?)"
-            | x :: _ ->
-              let x = f x in
-              state.print_stack <- x :: state.print_stack;
-              state.mark_tail <- Inuit.Cursor.sub x :: state.mark_tail
-            end
-          | Flags f ->
-            magic_cookie := Empty;
-            begin match state.print_stack with
-            | [] -> invalid_arg "Inuit_format.print_open_tag: stack is empty (internal error?)"
-            | x :: _ ->
-              let x = Inuit.Cursor.with_flags (f (Inuit.Cursor.get_flags x)) x in
-              state.print_stack <- x :: state.print_stack;
-              state.mark_tail <- Inuit.Cursor.sub x :: state.mark_tail
-            end
-        ));
-      print_close_tag = (fun tag -> if tag == magic_tag then (
-          match state.print_stack with
-          | _ :: (x :: _ as xs)  ->
-            state.print_stack <- xs;
-            state.mark_tail <- Inuit.Cursor.sub x :: state.mark_tail;
-          | [_] | [] -> invalid_arg "Inuit_format.print_close_tag: unbalanced tag"
-        ));
+      mark_open_stag = pop_tag;
+      mark_close_stag = pop_tag;
+      print_open_stag = (function
+          | Inuit_cookie -> (
+              match !magic_cookie with
+              | Empty -> invalid_arg "Inuit_format.print_open_tag: handler not found (internal error?)"
+              | Cursor f ->
+                magic_cookie := Empty;
+                begin match state.print_stack with
+                  | [] -> invalid_arg "Inuit_format.print_open_tag: stack is empty (internal error?)"
+                  | x :: _ ->
+                    let x = f x in
+                    state.print_stack <- x :: state.print_stack;
+                    state.mark_tail <- Inuit.Cursor.sub x :: state.mark_tail
+                end
+              | Flags f ->
+                magic_cookie := Empty;
+                begin match state.print_stack with
+                  | [] -> invalid_arg "Inuit_format.print_open_tag: stack is empty (internal error?)"
+                  | x :: _ ->
+                    let x = Inuit.Cursor.with_flags (f (Inuit.Cursor.get_flags x)) x in
+                    state.print_stack <- x :: state.print_stack;
+                    state.mark_tail <- Inuit.Cursor.sub x :: state.mark_tail
+                end
+            )
+          | _ -> ()
+        );
+      print_close_stag = (function
+          | Inuit_cookie -> (
+              match state.print_stack with
+              | _ :: (x :: _ as xs)  ->
+                state.print_stack <- xs;
+                state.mark_tail <- Inuit.Cursor.sub x :: state.mark_tail;
+              | [_] | [] -> invalid_arg "Inuit_format.print_close_tag: unbalanced tag"
+            )
+          | _ -> ()
+        );
     };
     Format.pp_set_tags pp true;
     pp
@@ -110,7 +116,7 @@ end = struct
   let push_cursor f pp =
     let magic_cookie' = !magic_cookie in
     magic_cookie := Cursor f;
-    match Format.pp_open_tag pp magic_tag with
+    match Format.pp_open_stag pp Inuit_cookie with
     | () ->
       begin
         let magic_cookie'' = !magic_cookie in
@@ -126,7 +132,7 @@ end = struct
   let push_flags f pp =
     let magic_cookie' = !magic_cookie in
     magic_cookie := Flags f;
-    match Format.pp_open_tag pp magic_tag with
+    match Format.pp_open_stag pp Inuit_cookie with
     | () ->
       begin
         let magic_cookie'' = !magic_cookie in
@@ -140,7 +146,7 @@ end = struct
       reraise exn
 
   let pop pp =
-    Format.pp_close_tag pp ()
+    Format.pp_close_stag pp ()
 
   let with_cursor f k pp x =
     push_cursor f pp;
@@ -166,12 +172,13 @@ end = struct
     let pp = Format.make_formatter (fun _ _ _ -> ()) (fun () -> ()) in
     Format.pp_set_mark_tags pp false;
     Format.pp_set_print_tags pp true;
-    Format.pp_set_formatter_tag_functions pp {
+    Format.pp_set_formatter_stag_functions pp {
       Format.
-      mark_open_tag = (fun _ -> "");
-      mark_close_tag = (fun _ -> "");
-      print_open_tag = (fun tag -> if tag == magic_tag then (magic_cookie := Empty));
-      print_close_tag = (fun _ -> ());
+      mark_open_stag = (fun _ -> "");
+      mark_close_stag = (fun _ -> "");
+      print_open_stag =
+        (function Inuit_cookie -> magic_cookie := Empty | _ -> ());
+      print_close_stag = (fun _ -> ());
     };
     pp
 end

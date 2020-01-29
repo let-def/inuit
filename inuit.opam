@@ -10,7 +10,7 @@ bug-reports: "https://github.com/let-def/inuit/issues"
 depends: [
   "dune" {>= "1.0"}
   "grenier" {>= "0.4"}
-  "ocaml" {>= "4.01.0"}
+  "ocaml" {>= "4.08.0"}
 ]
 depopts: []
 build: [
